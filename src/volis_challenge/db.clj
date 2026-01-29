@@ -75,32 +75,17 @@
     (doseq [row rows]
       (upsert-executed-tx! tx row))))
 
-(defn activities-by-date
-  [ds {:keys [date activity type]}]
+(defn query-activities-raw
+  [ds {:keys [date activity activity_type]}]
   (let [base-sql (str
                   "select activity, activity_type, unit, "
                   "amount_planned, amount_executed "
                   "from activity "
                   "where date = ?"
-                  (when activity " and activity = ?"))
+                  (when activity " and activity = ?")
+                  (when activity_type " and activity_type = ?"))
         query-params (cond-> [(ensure-local-date date)]
-                       activity (conj activity))
+                       activity (conj activity)
+                       activity_type (conj activity_type))
         rows (jdbc/execute! ds (into [base-sql] query-params))]
-    {:items (->> rows
-                 (map (fn [{:keys [activity activity_type unit amount_planned amount_executed]}]
-                        (let [kinds (cond
-                                      (and amount_planned amount_executed) :both
-                                      amount_planned :planned
-                                      amount_executed :executed
-                                      :else nil)
-                              amount (case type
-                                       "planned" amount_planned
-                                       "executed" amount_executed
-                                       (or amount_executed amount_planned))]
-                          (when kinds
-                            {:activity activity
-                             :activity_type activity_type
-                             :unit unit
-                             :amount amount
-                             :kind kinds}))))
-                 (remove nil?))}))
+    rows))

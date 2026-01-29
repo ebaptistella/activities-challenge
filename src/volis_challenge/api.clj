@@ -5,7 +5,8 @@
    [ring.middleware.multipart-params :as multipart]
    [ring.util.response :as response]
    [volis-challenge.csv :as csv]
-   [volis-challenge.db :as db]))
+   [volis-challenge.db :as db]
+   [volis-challenge.domain :as domain]))
 
 (defn import-summary
   [parsed]
@@ -47,14 +48,16 @@
   [ds request]
   (let [date (get-in request [:query-params "date"])
         activity (get-in request [:query-params "activity"])
+        activity-type (get-in request [:query-params "activity_type"])
         type (get-in request [:query-params "type"])]
     (if (nil? date)
       {:status 400
        :headers {}
        :body {:error "Parametro 'date' e obrigatorio"}}
-      (let [result (db/activities-by-date ds {:date date
-                                              :activity activity
-                                              :type type})]
+      (let [result (domain/plano-x-realizado ds {:date date
+                                                  :activity activity
+                                                  :activity_type activity-type
+                                                  :type type})]
         {:status 200
          :headers {}
          :body result}))))
