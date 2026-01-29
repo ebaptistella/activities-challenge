@@ -1,6 +1,4 @@
 /target
-/classes
-/checkouts
 profiles.clj
 pom.xml
 pom.xml.asc
@@ -11,3 +9,7 @@ pom.xml.asc
 /.prepl-port
 .hgignore
 .hg/
+.lsp/
+.cursor/
+.clj-kondo/
+.DS_Store
