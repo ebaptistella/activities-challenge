@@ -1,11 +1,13 @@
 (ns volis-challenge.ui.core
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [reagent.core :as r]
+            [reagent.dom :as rdom]))
 
-(defonce app-state (atom {:filters {:date ""
-                                    :activity ""
-                                    :activity-type ""}
-                          :upload-status nil
-                          :activities []}))
+(defonce app-state (r/atom {:filters {:date ""
+                                      :activity ""
+                                      :activity-type ""}
+                            :upload-status nil
+                            :activities []}))
 
 (defn format-date
   [date-str]
@@ -68,7 +70,7 @@
         (.then (fn [response]
                  (-> (.json response)
                      (.then (fn [data]
-                              (swap! app-state assoc :activities (.-items data)))))))
+                              (swap! app-state assoc :activities (js->clj (.-items data) :keywordize-keys true)))))))
         (.catch (fn [error]
                   (js/console.error "Erro ao buscar atividades:" error))))))
 
@@ -92,113 +94,130 @@
 (defn upload-status-message
   [status]
   (when status
-    (let [status-el (.createElement js/document "div")]
-      (cond
-        (:loading status)
-        (do
-          (set! (.-textContent status-el) "Enviando arquivo...")
-          (set! (.-className status-el) "mt-5 p-4 rounded-lg text-sm bg-blue-50 text-blue-700 border border-blue-200"))
-        (:success status)
-        (let [type-name (case (:type status)
-                          :planned "Planejado"
-                          :executed "Executado"
-                          "Desconhecido")]
-          (set! (.-textContent status-el)
-                (str "Upload realizado com sucesso! Tipo detectado: " type-name
-                     " | Válidos: " (:valid status)
-                     " | Inválidos: " (:invalid status)))
-          (set! (.-className status-el) "mt-5 p-4 rounded-lg text-sm bg-green-50 text-green-700 border border-green-200"))
-        (:error status)
-        (do
-          (set! (.-textContent status-el)
-                (str "Erro no upload: " (or (:message status) "Erro desconhecido")))
-          (set! (.-className status-el) "mt-5 p-4 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200")))
-      status-el)))
+    (cond
+      (:loading status)
+      [:div.mt-5.p-4.rounded-lg.text-sm.bg-blue-50.text-blue-700.border.border-blue-200
+       "Enviando arquivo..."]
+      (:success status)
+      (let [type-name (case (:type status)
+                        :planned "Planejado"
+                        :executed "Executado"
+                        "Desconhecido")]
+        [:div.mt-5.p-4.rounded-lg.text-sm.bg-green-50.text-green-700.border.border-green-200
+         (str "Upload realizado com sucesso! Tipo detectado: " type-name
+              " | Válidos: " (:valid status)
+              " | Inválidos: " (:invalid status))])
+      (:error status)
+      [:div.mt-5.p-4.rounded-lg.text-sm.bg-red-50.text-red-700.border.border-red-200
+       (str "Erro no upload: " (or (:message status) "Erro desconhecido"))])))
 
 (defn render-filters
   []
-  (let [filters (:filters @app-state)
-        container (.createElement js/document "div")]
-    (set! (.-className container) "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-end")
-    (set! (.-innerHTML container)
-          (str "<div class=\"flex flex-col gap-2\">"
-               "<label for=\"date-filter\" class=\"font-semibold text-gray-800 text-sm\">Data:</label>"
-               "<input type=\"date\" id=\"date-filter\" class=\"p-3 border-2 border-gray-300 rounded-md text-base transition-colors focus:outline-none focus:border-indigo-500\" value=\"" (:date filters) "\" />"
-               "</div>"
-               "<div class=\"flex flex-col gap-2\">"
-               "<label for=\"activity-filter\" class=\"font-semibold text-gray-800 text-sm\">Atividade:</label>"
-               "<input type=\"text\" id=\"activity-filter\" class=\"p-3 border-2 border-gray-300 rounded-md text-base transition-colors focus:outline-none focus:border-indigo-500\" placeholder=\"Filtrar por atividade\" value=\"" (:activity filters) "\" />"
-               "</div>"
-               "<div class=\"flex flex-col gap-2\">"
-               "<label for=\"activity-type-filter\" class=\"font-semibold text-gray-800 text-sm\">Tipo de Atividade:</label>"
-               "<input type=\"text\" id=\"activity-type-filter\" class=\"p-3 border-2 border-gray-300 rounded-md text-base transition-colors focus:outline-none focus:border-indigo-500\" placeholder=\"Filtrar por tipo\" value=\"" (:activity-type filters) "\" />"
-               "</div>"
-               "<div class=\"flex flex-col gap-2\">"
-               "<button id=\"apply-filters-btn\" class=\"p-3 px-6 border-none rounded-md text-base font-semibold cursor-pointer transition-all bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0\">Aplicar Filtros</button>"
-               "</div>"))
-    (let [date-input (.querySelector container "#date-filter")
-          activity-input (.querySelector container "#activity-filter")
-          activity-type-input (.querySelector container "#activity-type-filter")
-          apply-btn (.querySelector container "#apply-filters-btn")]
-      (.addEventListener date-input "change" #(handle-filter-change :date %))
-      (.addEventListener activity-input "input" #(update-filter! :activity (-> % .-target .-value)))
-      (.addEventListener activity-type-input "input" #(update-filter! :activity-type (-> % .-target .-value)))
-      (.addEventListener apply-btn "click" handle-apply-filters))
-    container))
+  (let [filters (:filters @app-state)]
+    [:div.grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-4.gap-5.items-end
+     [:div.flex.flex-col.gap-2
+      [:label.font-semibold.text-gray-800.text-sm {:for "date-filter"} "Data:"]
+      [:input#date-filter.p-3.border-2.border-gray-300.rounded-md.text-base.transition-colors.focus:outline-none.focus:border-indigo-500
+       {:type "date"
+        :value (:date filters)
+        :on-change #(handle-filter-change :date %)}]]
+     [:div.flex.flex-col.gap-2
+      [:label.font-semibold.text-gray-800.text-sm {:for "activity-filter"} "Atividade:"]
+      [:input#activity-filter.p-3.border-2.border-gray-300.rounded-md.text-base.transition-colors.focus:outline-none.focus:border-indigo-500
+       {:type "text"
+        :placeholder "Filtrar por atividade"
+        :value (:activity filters)
+        :on-input #(update-filter! :activity (-> % .-target .-value))}]]
+     [:div.flex.flex-col.gap-2
+      [:label.font-semibold.text-gray-800.text-sm {:for "activity-type-filter"} "Tipo de Atividade:"]
+      [:input#activity-type-filter.p-3.border-2.border-gray-300.rounded-md.text-base.transition-colors.focus:outline-none.focus:border-indigo-500
+       {:type "text"
+        :placeholder "Filtrar por tipo"
+        :value (:activity-type filters)
+        :on-input #(update-filter! :activity-type (-> % .-target .-value))}]]
+     [:div.flex.flex-col.gap-2
+      [:button#apply-filters-btn.p-3.px-6.border-none.rounded-md.text-base.font-semibold.cursor-pointer.transition-all.bg-gradient-to-r.from-indigo-500.to-purple-600.text-white.hover:-translate-y-0.5.hover:shadow-lg.active:translate-y-0
+       {:on-click handle-apply-filters}
+       "Aplicar Filtros"]]]))
 
 (defn render-upload
   []
-  (let [container (.createElement js/document "div")
-        status (:upload-status @app-state)]
-    (set! (.-className container) "")
-    (set! (.-innerHTML container)
-          (str "<div class=\"border-2 border-dashed border-indigo-500 rounded-lg p-10 text-center bg-indigo-50 transition-all cursor-pointer hover:border-purple-600 hover:bg-indigo-100\">"
-               "<label for=\"csv-upload\" class=\"flex flex-col items-center gap-4 cursor-pointer\">"
-               "<svg width=\"48\" height=\"48\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" class=\"text-indigo-500\">"
-               "<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"></path>"
-               "<polyline points=\"17 8 12 3 7 8\"></polyline>"
-               "<line x1=\"12\" y1=\"3\" x2=\"12\" y2=\"15\"></line>"
-               "</svg>"
-               "<span class=\"text-xl font-semibold text-gray-800\">Clique para fazer upload de CSV</span>"
-               "<small class=\"text-sm text-gray-600\">Arquivos planned ou executed são aceitos</small>"
-               "</label>"
-               "<input type=\"file\" id=\"csv-upload\" accept=\".csv\" class=\"hidden\" />"
-               "</div>"))
-    (let [file-input (.querySelector container "#csv-upload")]
-      (.addEventListener file-input "change" handle-file-select))
-    (when status
-      (.appendChild container (upload-status-message status)))
-    container))
+  (let [status (:upload-status @app-state)]
+    [:div
+     [:div.border-2.border-dashed.border-indigo-500.rounded-lg.p-10.text-center.bg-indigo-50.transition-all.cursor-pointer.hover:border-purple-600.hover:bg-indigo-100
+      [:label.flex.flex-col.items-center.gap-4.cursor-pointer {:for "csv-upload"}
+       [:svg {:width 48 :height 48 :viewBox "0 0 24 24" :fill "none" :stroke "currentColor" :stroke-width 2 :class "text-indigo-500"}
+        [:path {:d "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"}]
+        [:polyline {:points "17 8 12 3 7 8"}]
+        [:line {:x1 12 :y1 3 :x2 12 :y2 15}]]
+       [:span.text-xl.font-semibold.text-gray-800 "Clique para fazer upload de CSV"]
+       [:small.text-sm.text-gray-600 "Arquivos planned ou executed são aceitos"]]
+      [:input#csv-upload.hidden {:type "file" :accept ".csv" :on-change handle-file-select}]]
+     (upload-status-message status)]))
+
+(defn kind-badge
+  [kind]
+  (let [kind-str (if (keyword? kind) (name kind) kind)
+        kind-label (case kind-str
+                     "planned" "Planejado"
+                     "executed" "Executado"
+                     "both" "Ambos"
+                     kind-str)
+        kind-class (case kind-str
+                     "planned" "bg-blue-100 text-blue-800"
+                     "executed" "bg-green-100 text-green-800"
+                     "both" "bg-purple-100 text-purple-800"
+                     "bg-gray-100 text-gray-800")]
+    [:span.px-3.py-1.rounded-full.text-xs.font-semibold {:class kind-class}
+     kind-label]))
+
+(defn activities-table
+  []
+  (let [activities (:activities @app-state)]
+    (if (empty? activities)
+      [:div.text-center.py-10.text-gray-500
+       "Nenhuma atividade encontrada"]
+      [:div.overflow-x-auto.rounded-lg.border.border-gray-200
+       [:table.min-w-full.divide-y.divide-gray-200
+        [:thead.bg-gray-50
+         [:tr
+          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Atividade"]
+          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Tipo de Atividade"]
+          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Unidade"]
+          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Quantidade"]
+          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Tipo"]]]
+        [:tbody.bg-white.divide-y.divide-gray-200
+         (for [activity activities]
+           ^{:key (str (:activity activity) "-" (:activity_type activity) "-" (:kind activity))}
+           [:tr.hover:bg-gray-50
+            [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 (:activity activity)]
+            [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 (:activity_type activity)]
+            [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 (:unit activity)]
+            [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 (:amount activity)]
+            [:td.px-6.py-4.whitespace-nowrap.text-sm
+             (kind-badge (:kind activity))]])]]])))
 
 (defn render-app
   []
-  (let [app-el (.getElementById js/document "app")
-        container (.createElement js/document "div")]
-    (set! (.-className container) "max-w-6xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden")
-    (set! (.-innerHTML container)
-          (str "<header class=\"bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-8 text-center\">"
-               "<h1 class=\"text-4xl md:text-5xl mb-2.5\">Volis Challenge</h1>"
-               "<p class=\"text-lg opacity-90\">Gerenciamento de Atividades Planejadas e Executadas</p>"
-               "</header>"
-               "<main class=\"p-8 md:p-8\">"
-               "<section class=\"mb-10 upload-section\">"
-               "<h2 class=\"text-2xl mb-5 text-gray-800\">Upload de Arquivos CSV</h2>"
-               "</section>"
-               "<section class=\"mb-10 filters-section\">"
-               "<h2 class=\"text-2xl mb-5 text-gray-800\">Filtros</h2>"
-               "</section>"
-               "</main>"))
-    (let [upload-section (.querySelector container ".upload-section")
-          filters-section (.querySelector container ".filters-section")]
-      (.appendChild upload-section (render-upload))
-      (.appendChild filters-section (render-filters)))
-    (set! (.-innerHTML app-el) "")
-    (.appendChild app-el container)))
+  [:div.max-w-6xl.mx-auto.bg-white.rounded-xl.shadow-2xl.overflow-hidden
+   [:header.bg-gradient-to-r.from-indigo-500.to-purple-600.text-white.p-8.text-center
+    [:h1.text-4xl.md:text-5xl.mb-2.5 "Volis Challenge"]
+    [:p.text-lg.opacity-90 "Gerenciamento de Atividades Planejadas e Executadas"]]
+   [:main.p-8.md:p-8
+    [:section.mb-10.upload-section
+     [:h2.text-2xl.mb-5.text-gray-800 "Upload de Arquivos CSV"]
+     [render-upload]]
+    [:section.mb-10.filters-section
+     [:h2.text-2xl.mb-5.text-gray-800 "Filtros"]
+     [render-filters]]
+    [:section.mb-10.activities-section
+     [:h2.text-2xl.mb-5.text-gray-800 "Atividades"]
+     [activities-table]]]])
 
 (defn mount-root
   []
-  (when (.getElementById js/document "app")
-    (render-app)
+  (when-let [app-el (.getElementById js/document "app")]
+    (rdom/render [render-app] app-el)
     (let [filters (:filters @app-state)]
       (when (empty? (:date filters))
         (update-filter! :date (today-date))
