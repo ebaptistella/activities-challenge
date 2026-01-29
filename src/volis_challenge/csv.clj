@@ -1,7 +1,8 @@
 (ns volis-challenge.csv
   (:require
    [clojure.data.csv :as csv]
-   [clojure.java.io :as io])
+   [clojure.java.io :as io]
+   [clojure.string :as string])
   (:import
    (java.io Reader)
    (java.time LocalDate)))
@@ -17,31 +18,61 @@
 (defn parse-number
   [s]
   (when (some? s)
-    (bigdec s)))
+    (try
+      (bigdec s)
+      (catch Exception _
+        nil))))
 
 (defn parse-date
   [s]
   (when (some? s)
-    (LocalDate/parse s)))
+    (try
+      (LocalDate/parse s)
+      (catch Exception _
+        nil))))
 
 (defn header-indexes
   [header]
   (zipmap header (range)))
 
 (defn row->activity
-  [idx row]
+  [idx line row]
   (let [date-idx (get idx "Date")
         activity-idx (get idx "Activity")
         type-idx (get idx "Activity type")
         unit-idx (get idx "Unit")
         amount-planned-idx (get idx "Amount planned")
         amount-executed-idx (get idx "Amount executed")
-        amount-idx (or amount-planned-idx amount-executed-idx)]
-    {:date (parse-date (nth row date-idx))
-     :activity (nth row activity-idx)
-     :activity_type (nth row type-idx)
-     :unit (nth row unit-idx)
-     :amount (parse-number (nth row amount-idx))}))
+        amount-idx (or amount-planned-idx amount-executed-idx)
+        date (nth row date-idx nil)
+        activity (nth row activity-idx nil)
+        activity-type (nth row type-idx nil)
+        unit (nth row unit-idx nil)
+        amount (nth row amount-idx nil)
+        required-fields {"Date" date
+                         "Activity" activity
+                         "Activity type" activity-type
+                         "Unit" unit
+                         "Amount" amount}
+        empty-fields (->> required-fields
+                          (filter (fn [[_ v]] (or (nil? v) (string/blank? v))))
+                          (map first)
+                          (into []))]
+    (if (seq empty-fields)
+      {:error {:line line
+               :reason (str "Campos obrigatorios vazios: " (string/join ", " empty-fields))}}
+      (let [parsed-date (parse-date date)
+            parsed-amount (parse-number amount)]
+        (cond
+          (nil? parsed-date) {:error {:line line
+                                      :reason "Data invalida"}}
+          (nil? parsed-amount) {:error {:line line
+                                        :reason "Amount invalido"}}
+          :else {:activity {:date parsed-date
+                            :activity activity
+                            :activity_type activity-type
+                            :unit unit
+                            :amount parsed-amount}})))))
 
 (defn read-csv-reader
   ^java.util.List
@@ -55,9 +86,17 @@
         body (next rows)
         kind (detect-type-from-header header)
         idx (header-indexes header)
-        activities (map (partial row->activity idx) body)]
+        result (reduce (fn [acc [i row]]
+                         (let [line (+ 2 i)
+                               row-result (row->activity idx line row)]
+                           (if-let [activity (:activity row-result)]
+                             (update acc :rows conj activity)
+                             (update acc :errors conj (:error row-result)))))
+                       {:rows [] :errors []}
+                       (map-indexed vector body))]
     {:type kind
-     :rows activities}))
+     :rows (:rows result)
+     :errors (:errors result)}))
 
 (defn parse-csv-file
   [path]
