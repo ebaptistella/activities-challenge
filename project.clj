@@ -16,7 +16,6 @@
                  [org.apache.logging.log4j/log4j-api "2.23.1"]
                  [org.apache.logging.log4j/log4j-core "2.23.1"]
                  [org.apache.logging.log4j/log4j-slf4j2-impl "2.23.1"]]
-  :plugins [[migratus/migratus-lein "0.7.3"]]
   :migratus {:store :database
              :migration-dir "resources/migrations"
              :db {:connection-uri (System/getenv "DATABASE_URL")}}
