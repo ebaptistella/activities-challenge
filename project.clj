@@ -15,7 +15,19 @@
                  [org.clojure/tools.logging "1.3.0"]
                  [org.apache.logging.log4j/log4j-api "2.23.1"]
                  [org.apache.logging.log4j/log4j-core "2.23.1"]
-                 [org.apache.logging.log4j/log4j-slf4j2-impl "2.23.1"]]
+                 [org.apache.logging.log4j/log4j-slf4j2-impl "2.23.1"]
+                 [org.clojure/clojurescript "1.11.132"]]
+  :plugins [[lein-cljsbuild "1.1.8"]]
+  :source-paths ["src"]
+  :clean-targets ^{:protect false} ["resources/public/js" "target"]
+  :cljsbuild {:builds [{:id "app"
+                        :source-paths ["src"]
+                        :compiler {:main volis-challenge.ui.core
+                                   :asset-path "/js/out"
+                                   :output-to "resources/public/js/app.js"
+                                   :output-dir "resources/public/js/out"
+                                   :optimizations :advanced
+                                   :pretty-print false}}]}
   :migratus {:store :database
              :migration-dir "resources/migrations"
              :db {:connection-uri (System/getenv "DATABASE_URL")}}
