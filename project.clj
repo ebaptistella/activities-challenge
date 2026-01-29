@@ -3,7 +3,8 @@
   :url "https://github.com/ebaptistella/volis-challenge"
   :license {:name "MIT"
             :url "https://opensource.org/licenses/MIT"}
-  :dependencies [[org.clojure/clojure "1.12.2"]]
+  :dependencies [[org.clojure/clojure "1.12.2"]
+                 [migratus/migratus "1.4.5"]]
   :main ^:skip-aot challenge.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
