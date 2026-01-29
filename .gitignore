@@ -16,3 +16,4 @@ pom.xml.asc
 .env
 .env.local
 WORKFLOW.md
+resources/public/js/out
