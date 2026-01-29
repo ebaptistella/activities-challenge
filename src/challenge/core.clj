@@ -2,6 +2,7 @@
   (:gen-class))
 
 (defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (println "Hello, World!"))
+  [& _]
+  (let [database-url (System/getenv "DATABASE_URL")]
+    (when (nil? database-url)
+      (throw (ex-info "DATABASE_URL not configured" {})))))

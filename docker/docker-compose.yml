@@ -1,27 +1,13 @@
 services:
-  app:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.app
-    container_name: volis-challenge-app
-    ports:
-      - "3000:3000"
-    depends_on:
-      - db
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-challenge}
-
-  db:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.db
+  postgres:
+    image: public.ecr.aws/docker/library/postgres:latest
     container_name: volis-challenge-postgres
     environment:
       POSTGRES_DB: challenge
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
-      - pgdata:/var/lib/postgresql
+      - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
@@ -29,6 +15,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.app
+    container_name: volis-challenge-app
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-challenge}
+    ports:
+      - "3000:3000"
 
 volumes:
   pgdata:
