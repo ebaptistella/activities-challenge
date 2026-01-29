@@ -7,7 +7,9 @@
                                       :activity ""
                                       :activity-type ""}
                             :upload-status nil
-                            :activities []}))
+                            :activities []
+                            :activities-loading false
+                            :activities-error nil}))
 
 (defn format-date
   [date-str]
@@ -29,31 +31,6 @@
   [key value]
   (swap! app-state update-in [:filters key] (constantly value)))
 
-(defn upload-csv!
-  [file]
-  (let [form-data (js/FormData.)]
-    (.append form-data "file" file)
-    (swap! app-state assoc :upload-status {:loading true})
-    (-> (js/fetch "/api/import"
-                  {:method "POST"
-                   :body form-data})
-        (.then (fn [response]
-                 (-> (.json response)
-                     (.then (fn [data]
-                              (swap! app-state assoc
-                                     :upload-status {:success true
-                                                     :type (keyword (.-type data))
-                                                     :valid (.-valid data)
-                                                     :invalid (.-invalid data)
-                                                     :loading false})
-                              (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000))))))
-        (.catch (fn [error]
-                  (swap! app-state assoc
-                         :upload-status {:error true
-                                         :message (.-message error)
-                                         :loading false})
-                  (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000))))))
-
 (defn fetch-activities!
   []
   (let [filters (:filters @app-state)
@@ -66,13 +43,74 @@
         url (if (empty? params)
               "/api/activities"
               (str "/api/activities?" params))]
+    (swap! app-state assoc :activities-loading true :activities-error nil)
     (-> (js/fetch url)
         (.then (fn [response]
-                 (-> (.json response)
-                     (.then (fn [data]
-                              (swap! app-state assoc :activities (js->clj (.-items data) :keywordize-keys true)))))))
+                 (if (>= (.-status response) 200)
+                   (if (< (.-status response) 300)
+                     (-> (.json response)
+                         (.then (fn [data]
+                                  (swap! app-state assoc
+                                         :activities (js->clj (.-items data) :keywordize-keys true)
+                                         :activities-loading false
+                                         :activities-error nil)))
+                         (.catch (fn [_]
+                                  (swap! app-state assoc
+                                         :activities-loading false
+                                         :activities-error "Erro ao processar resposta da API"))))
+                     (-> (.json response)
+                         (.then (fn [data]
+                                  (swap! app-state assoc
+                                         :activities-loading false
+                                         :activities-error (or (.-error data) "Erro ao buscar atividades"))))))
+                   (swap! app-state assoc
+                          :activities-loading false
+                          :activities-error "Erro de conexão"))))
         (.catch (fn [error]
-                  (js/console.error "Erro ao buscar atividades:" error))))))
+                 (swap! app-state assoc
+                        :activities-loading false
+                        :activities-error (str "Erro ao buscar atividades: " (or (.-message error) "Erro desconhecido"))))))))
+
+(defn upload-csv!
+  [file]
+  (let [form-data (js/FormData.)]
+    (.append form-data "file" file)
+    (swap! app-state assoc :upload-status {:loading true})
+    (-> (js/fetch "/api/import"
+                  {:method "POST"
+                   :body form-data})
+        (.then (fn [response]
+                 (if (>= (.-status response) 200)
+                   (if (< (.-status response) 300)
+                     (-> (.json response)
+                         (.then (fn [data]
+                                  (swap! app-state assoc
+                                         :upload-status {:success true
+                                                         :type (keyword (.-type data))
+                                                         :valid (.-valid data)
+                                                         :invalid (.-invalid data)
+                                                         :loading false})
+                                  (fetch-activities!)
+                                  (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000))))
+                     (-> (.json response)
+                         (.then (fn [data]
+                                  (swap! app-state assoc
+                                         :upload-status {:error true
+                                                         :message (or (.-error data) "Erro ao fazer upload")
+                                                         :loading false})
+                                  (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000)))))
+                   (do
+                     (swap! app-state assoc
+                            :upload-status {:error true
+                                            :message "Erro de conexão"
+                                            :loading false})
+                     (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000)))))
+        (.catch (fn [error]
+                 (swap! app-state assoc
+                        :upload-status {:error true
+                                        :message (or (.-message error) "Erro desconhecido")
+                                        :loading false})
+                 (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000))))))
 
 (defn handle-file-select
   [event]
@@ -173,10 +211,22 @@
 
 (defn activities-table
   []
-  (let [activities (:activities @app-state)]
-    (if (empty? activities)
+  (let [activities (:activities @app-state)
+        loading (:activities-loading @app-state)
+        error (:activities-error @app-state)]
+    (cond
+      loading
+      [:div.text-center.py-10
+       [:div.inline-block.animate-spin.rounded-full.h-8.w-8.border-b-2.border-indigo-500]
+       [:p.mt-4.text-gray-600 "Carregando atividades..."]]
+      error
+      [:div.p-4.rounded-lg.bg-red-50.text-red-700.border.border-red-200
+       [:p.font-semibold "Erro ao carregar atividades"]
+       [:p.text-sm error]]
+      (empty? activities)
       [:div.text-center.py-10.text-gray-500
        "Nenhuma atividade encontrada"]
+      :else
       [:div.overflow-x-auto.rounded-lg.border.border-gray-200
        [:table.min-w-full.divide-y.divide-gray-200
         [:thead.bg-gray-50
