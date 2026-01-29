@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
 
@@ -14,6 +14,12 @@ COPY resources/ ./resources/
 
 RUN lein uberjar
 
+FROM eclipse-temurin:21-jdk
+
+WORKDIR /app
+
+COPY --from=builder /app/target/*-standalone.jar app.jar
+
 EXPOSE 3000
 
-CMD ["sh", "-c", "java -jar target/*-standalone.jar"]
+CMD ["java", "-jar", "app.jar"]
