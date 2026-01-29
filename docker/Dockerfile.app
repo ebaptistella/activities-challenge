@@ -13,7 +13,7 @@ RUN lein deps
 COPY src/ ./src/
 COPY resources/ ./resources/
 
-RUN lein uberjar
+RUN lein cljsbuild once app && lein uberjar
 
 FROM public.ecr.aws/docker/library/eclipse-temurin:21-jdk
 
