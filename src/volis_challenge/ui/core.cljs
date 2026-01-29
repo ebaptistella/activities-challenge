@@ -93,12 +93,11 @@
   [status]
   (when status
     (let [status-el (.createElement js/document "div")]
-      (set! (.-className status-el) "upload-status")
       (cond
         (:loading status)
         (do
           (set! (.-textContent status-el) "Enviando arquivo...")
-          (set! (.-className status-el) "upload-status loading"))
+          (set! (.-className status-el) "mt-5 p-4 rounded-lg text-sm bg-blue-50 text-blue-700 border border-blue-200"))
         (:success status)
         (let [type-name (case (:type status)
                           :planned "Planejado"
@@ -108,34 +107,34 @@
                 (str "Upload realizado com sucesso! Tipo detectado: " type-name
                      " | Válidos: " (:valid status)
                      " | Inválidos: " (:invalid status)))
-          (set! (.-className status-el) "upload-status success"))
+          (set! (.-className status-el) "mt-5 p-4 rounded-lg text-sm bg-green-50 text-green-700 border border-green-200"))
         (:error status)
         (do
           (set! (.-textContent status-el)
                 (str "Erro no upload: " (or (:message status) "Erro desconhecido")))
-          (set! (.-className status-el) "upload-status error")))
+          (set! (.-className status-el) "mt-5 p-4 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200")))
       status-el)))
 
 (defn render-filters
   []
   (let [filters (:filters @app-state)
         container (.createElement js/document "div")]
-    (set! (.-className container) "filters-container")
+    (set! (.-className container) "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-end")
     (set! (.-innerHTML container)
-          (str "<div class=\"filter-group\">"
-               "<label for=\"date-filter\">Data:</label>"
-               "<input type=\"date\" id=\"date-filter\" value=\"" (:date filters) "\" />"
+          (str "<div class=\"flex flex-col gap-2\">"
+               "<label for=\"date-filter\" class=\"font-semibold text-gray-800 text-sm\">Data:</label>"
+               "<input type=\"date\" id=\"date-filter\" class=\"p-3 border-2 border-gray-300 rounded-md text-base transition-colors focus:outline-none focus:border-indigo-500\" value=\"" (:date filters) "\" />"
                "</div>"
-               "<div class=\"filter-group\">"
-               "<label for=\"activity-filter\">Atividade:</label>"
-               "<input type=\"text\" id=\"activity-filter\" placeholder=\"Filtrar por atividade\" value=\"" (:activity filters) "\" />"
+               "<div class=\"flex flex-col gap-2\">"
+               "<label for=\"activity-filter\" class=\"font-semibold text-gray-800 text-sm\">Atividade:</label>"
+               "<input type=\"text\" id=\"activity-filter\" class=\"p-3 border-2 border-gray-300 rounded-md text-base transition-colors focus:outline-none focus:border-indigo-500\" placeholder=\"Filtrar por atividade\" value=\"" (:activity filters) "\" />"
                "</div>"
-               "<div class=\"filter-group\">"
-               "<label for=\"activity-type-filter\">Tipo de Atividade:</label>"
-               "<input type=\"text\" id=\"activity-type-filter\" placeholder=\"Filtrar por tipo\" value=\"" (:activity-type filters) "\" />"
+               "<div class=\"flex flex-col gap-2\">"
+               "<label for=\"activity-type-filter\" class=\"font-semibold text-gray-800 text-sm\">Tipo de Atividade:</label>"
+               "<input type=\"text\" id=\"activity-type-filter\" class=\"p-3 border-2 border-gray-300 rounded-md text-base transition-colors focus:outline-none focus:border-indigo-500\" placeholder=\"Filtrar por tipo\" value=\"" (:activity-type filters) "\" />"
                "</div>"
-               "<div class=\"filter-group\">"
-               "<button id=\"apply-filters-btn\" class=\"btn btn-primary\">Aplicar Filtros</button>"
+               "<div class=\"flex flex-col gap-2\">"
+               "<button id=\"apply-filters-btn\" class=\"p-3 px-6 border-none rounded-md text-base font-semibold cursor-pointer transition-all bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0\">Aplicar Filtros</button>"
                "</div>"))
     (let [date-input (.querySelector container "#date-filter")
           activity-input (.querySelector container "#activity-filter")
@@ -151,19 +150,19 @@
   []
   (let [container (.createElement js/document "div")
         status (:upload-status @app-state)]
-    (set! (.-className container) "upload-container")
+    (set! (.-className container) "")
     (set! (.-innerHTML container)
-          (str "<div class=\"upload-area\">"
-               "<label for=\"csv-upload\" class=\"upload-label\">"
-               "<svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\">"
+          (str "<div class=\"border-2 border-dashed border-indigo-500 rounded-lg p-10 text-center bg-indigo-50 transition-all cursor-pointer hover:border-purple-600 hover:bg-indigo-100\">"
+               "<label for=\"csv-upload\" class=\"flex flex-col items-center gap-4 cursor-pointer\">"
+               "<svg width=\"48\" height=\"48\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" class=\"text-indigo-500\">"
                "<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"></path>"
                "<polyline points=\"17 8 12 3 7 8\"></polyline>"
                "<line x1=\"12\" y1=\"3\" x2=\"12\" y2=\"15\"></line>"
                "</svg>"
-               "<span>Clique para fazer upload de CSV</span>"
-               "<small>Arquivos planned ou executed são aceitos</small>"
+               "<span class=\"text-xl font-semibold text-gray-800\">Clique para fazer upload de CSV</span>"
+               "<small class=\"text-sm text-gray-600\">Arquivos planned ou executed são aceitos</small>"
                "</label>"
-               "<input type=\"file\" id=\"csv-upload\" accept=\".csv\" style=\"display: none;\" />"
+               "<input type=\"file\" id=\"csv-upload\" accept=\".csv\" class=\"hidden\" />"
                "</div>"))
     (let [file-input (.querySelector container "#csv-upload")]
       (.addEventListener file-input "change" handle-file-select))
@@ -175,18 +174,18 @@
   []
   (let [app-el (.getElementById js/document "app")
         container (.createElement js/document "div")]
-    (set! (.-className container) "app-container")
+    (set! (.-className container) "max-w-6xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden")
     (set! (.-innerHTML container)
-          (str "<header class=\"app-header\">"
-               "<h1>Volis Challenge</h1>"
-               "<p>Gerenciamento de Atividades Planejadas e Executadas</p>"
+          (str "<header class=\"bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-8 text-center\">"
+               "<h1 class=\"text-4xl md:text-5xl mb-2.5\">Volis Challenge</h1>"
+               "<p class=\"text-lg opacity-90\">Gerenciamento de Atividades Planejadas e Executadas</p>"
                "</header>"
-               "<main class=\"app-main\">"
-               "<section class=\"upload-section\">"
-               "<h2>Upload de Arquivos CSV</h2>"
+               "<main class=\"p-8 md:p-8\">"
+               "<section class=\"mb-10\">"
+               "<h2 class=\"text-2xl mb-5 text-gray-800\">Upload de Arquivos CSV</h2>"
                "</section>"
-               "<section class=\"filters-section\">"
-               "<h2>Filtros</h2>"
+               "<section class=\"mb-10\">"
+               "<h2 class=\"text-2xl mb-5 text-gray-800\">Filtros</h2>"
                "</section>"
                "</main>"))
     (let [upload-section (.querySelector container ".upload-section")
