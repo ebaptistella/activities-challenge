@@ -46,26 +46,45 @@
     (swap! app-state assoc :activities-loading true :activities-error nil)
     (-> (js/fetch url)
         (.then (fn [response]
-                 (if (>= (.-status response) 200)
-                   (if (< (.-status response) 300)
-                     (-> (.json response)
-                         (.then (fn [data]
-                                  (swap! app-state assoc
-                                         :activities (js->clj (.-items data) :keywordize-keys true)
-                                         :activities-loading false
-                                         :activities-error nil)))
-                         (.catch (fn [_]
-                                  (swap! app-state assoc
-                                         :activities-loading false
-                                         :activities-error "Erro ao processar resposta da API"))))
-                     (-> (.json response)
-                         (.then (fn [data]
-                                  (swap! app-state assoc
-                                         :activities-loading false
-                                         :activities-error (or (.-error data) "Erro ao buscar atividades"))))))
-                   (swap! app-state assoc
-                          :activities-loading false
-                          :activities-error "Erro de conexão"))))
+                 (let [content-type (-> response .-headers (.get "content-type") (or ""))
+                       is-json (or (.includes content-type "application/json")
+                                   (.includes content-type "text/json"))]
+                   (if (>= (.-status response) 200)
+                     (if (< (.-status response) 300)
+                       (if is-json
+                         (-> (.json response)
+                             (.then (fn [data]
+                                      (swap! app-state assoc
+                                             :activities (js->clj (.-items data) :keywordize-keys true)
+                                             :activities-loading false
+                                             :activities-error nil)))
+                             (.catch (fn [error]
+                                      (swap! app-state assoc
+                                             :activities-loading false
+                                             :activities-error (str "Erro ao processar JSON: " (or (.-message error) "Resposta inválida"))))))
+                         (-> (.text response)
+                             (.then (fn [_]
+                                      (swap! app-state assoc
+                                             :activities-loading false
+                                             :activities-error (str "Resposta não é JSON. Status: " (.-status response)))))))
+                       (if is-json
+                         (-> (.json response)
+                             (.then (fn [data]
+                                      (swap! app-state assoc
+                                             :activities-loading false
+                                             :activities-error (or (.-error data) "Erro ao buscar atividades"))))
+                             (.catch (fn [_]
+                                      (swap! app-state assoc
+                                             :activities-loading false
+                                             :activities-error (str "Erro HTTP " (.-status response))))))
+                         (-> (.text response)
+                             (.then (fn [text]
+                                      (swap! app-state assoc
+                                             :activities-loading false
+                                             :activities-error (str "Erro HTTP " (.-status response) ": " (subs text 0 (min 100 (count text))))))))))
+                     (swap! app-state assoc
+                            :activities-loading false
+                            :activities-error "Erro de conexão")))))
         (.catch (fn [error]
                  (swap! app-state assoc
                         :activities-loading false

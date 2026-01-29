@@ -17,6 +17,7 @@
                  [org.apache.logging.log4j/log4j-core "2.23.1"]
                  [org.apache.logging.log4j/log4j-slf4j2-impl "2.23.1"]
                  [org.clojure/clojurescript "1.11.132"]
+                 [org.clojure/data.json "2.5.0"]
                  [org.clojure/data.csv "1.0.1"]
                  [reagent/reagent "1.2.0"]
                  [cljsjs/react "18.2.0-1"]

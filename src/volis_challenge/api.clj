@@ -1,6 +1,7 @@
 (ns volis-challenge.api
   (:require
    [clojure.java.io :as io]
+   [clojure.data.json :as json]
    [reitit.ring :as reitit.ring]
    [ring.middleware.multipart-params :as multipart]
    [ring.util.response :as response]
@@ -25,8 +26,8 @@
         tempfile (:tempfile file)]
     (if (nil? tempfile)
       {:status 400
-       :headers {}
-       :body {:error "Arquivo CSV nao enviado"}}
+       :headers {"Content-Type" "application/json"}
+       :body (json/write-str {:error "Arquivo CSV nao enviado"})}
       (try
         (with-open [r (io/reader tempfile)]
           (let [parsed (csv/parse-csv-reader r)
@@ -35,14 +36,14 @@
               :planned (db/import-planned-batch! ds rows)
               :executed (db/import-executed-batch! ds rows))
             {:status 200
-             :headers {}
-             :body (import-summary parsed)}))
+             :headers {"Content-Type" "application/json"}
+             :body (json/write-str (import-summary parsed))}))
         (catch clojure.lang.ExceptionInfo e
           (let [data (ex-data e)]
             {:status 400
-             :headers {}
-             :body {:error (.getMessage e)
-                    :details data}}))))))
+             :headers {"Content-Type" "application/json"}
+             :body (json/write-str {:error (.getMessage e)
+                                    :details data})}))))))
 
 (defn activities-handler
   [ds request]
@@ -52,15 +53,15 @@
         type (get-in request [:query-params "type"])]
     (if (nil? date)
       {:status 400
-       :headers {}
-       :body {:error "Parametro 'date' e obrigatorio"}}
+       :headers {"Content-Type" "application/json"}
+       :body (json/write-str {:error "Parametro 'date' e obrigatorio"})}
       (let [result (domain/plano-x-realizado ds {:date date
                                                  :activity activity
                                                  :activity_type activity-type
                                                  :type type})]
         {:status 200
-         :headers {}
-         :body result}))))
+         :headers {"Content-Type" "application/json"}
+         :body (json/write-str result)}))))
 
 (defn static-file-handler
   [request]
