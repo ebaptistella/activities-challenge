@@ -24,7 +24,7 @@
     (first (sql/find-by-keys tx :activity params))))
 
 (defn- insert-activity
-  [tx {:keys [date activity activity_type unit] :as row}]
+  [tx {:keys [date] :as row}]
   (let [payload (-> row
                     (assoc :date (ensure-local-date date))
                     (dissoc :amount))]
@@ -39,39 +39,68 @@
                  :unit unit}
         values {field (:amount row)
                 :updated_at (now)}]
-    (sql/update! tx :activity values payload))
+    (sql/update! tx :activity values payload)))
 
-  (defn- upsert-planned-tx!
-    [tx row]
-    (if (find-activity tx row)
-      (update-activity-field tx row :amount_planned)
-      (insert-activity tx (assoc row :amount_planned (:amount row)))))
+(defn- upsert-planned-tx!
+  [tx row]
+  (if (find-activity tx row)
+    (update-activity-field tx row :amount_planned)
+    (insert-activity tx (assoc row :amount_planned (:amount row)))))
 
-  (defn- upsert-executed-tx!
-    [tx row]
-    (if (find-activity tx row)
-      (update-activity-field tx row :amount_executed)
-      (insert-activity tx (assoc row :amount_executed (:amount row)))))
+(defn- upsert-executed-tx!
+  [tx row]
+  (if (find-activity tx row)
+    (update-activity-field tx row :amount_executed)
+    (insert-activity tx (assoc row :amount_executed (:amount row)))))
 
-  (defn upsert-planned!
-    [ds row]
-    (jdbc/with-transaction [tx ds]
-      (upsert-planned-tx! tx row)))
+(defn upsert-planned!
+  [ds row]
+  (jdbc/with-transaction [tx ds]
+    (upsert-planned-tx! tx row)))
 
-  (defn upsert-executed!
-    [ds row]
-    (jdbc/with-transaction [tx ds]
-      (upsert-executed-tx! tx row)))
+(defn upsert-executed!
+  [ds row]
+  (jdbc/with-transaction [tx ds]
+    (upsert-executed-tx! tx row)))
 
-  (defn import-planned-batch!
-    [ds rows]
-    (jdbc/with-transaction [tx ds]
-      (doseq [row rows]
-        (upsert-planned-tx! tx row))))
+(defn import-planned-batch!
+  [ds rows]
+  (jdbc/with-transaction [tx ds]
+    (doseq [row rows]
+      (upsert-planned-tx! tx row))))
 
-  (defn import-executed-batch!
-    [ds rows]
-    (jdbc/with-transaction [tx ds]
-      (doseq [row rows]
-        (upsert-executed-tx! tx row)))))
+(defn import-executed-batch!
+  [ds rows]
+  (jdbc/with-transaction [tx ds]
+    (doseq [row rows]
+      (upsert-executed-tx! tx row))))
 
+(defn activities-by-date
+  [ds {:keys [date activity type]}]
+  (let [base-sql (str
+                  "select activity, activity_type, unit, "
+                  "amount_planned, amount_executed "
+                  "from activity "
+                  "where date = ?"
+                  (when activity " and activity = ?"))
+        query-params (cond-> [(ensure-local-date date)]
+                       activity (conj activity))
+        rows (jdbc/execute! ds (into [base-sql] query-params))]
+    {:items (->> rows
+                 (map (fn [{:keys [activity activity_type unit amount_planned amount_executed]}]
+                        (let [kinds (cond
+                                      (and amount_planned amount_executed) :both
+                                      amount_planned :planned
+                                      amount_executed :executed
+                                      :else nil)
+                              amount (case type
+                                       "planned" amount_planned
+                                       "executed" amount_executed
+                                       (or amount_executed amount_planned))]
+                          (when kinds
+                            {:activity activity
+                             :activity_type activity_type
+                             :unit unit
+                             :amount amount
+                             :kind kinds}))))
+                 (remove nil?))}))

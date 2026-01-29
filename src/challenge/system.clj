@@ -70,11 +70,27 @@
              :body {:error (.getMessage e)
                     :details data}}))))))
 
+(defn- activities-handler [ds request]
+  (let [date (get-in request [:query-params "date"])
+        activity (get-in request [:query-params "activity"])
+        type (get-in request [:query-params "type"])]
+    (if (nil? date)
+      {:status 400
+       :headers {}
+       :body {:error "Parametro 'date' e obrigatorio"}}
+      (let [result (db/activities-by-date ds {:date date
+                                              :activity activity
+                                              :type type})]
+        {:status 200
+         :headers {}
+         :body result}))))
+
 (defn- make-handler [ds]
   (let [router (reitit.ring/router
                 [["/health" {:get (fn [_] {:status 200 :headers {} :body "ok"})}]
                  ["/" {:get (fn [_] (response/resource-response "public/index.html"))}]
-                 ["/api/import" {:post (fn [req] (import-handler ds req))}]])
+                 ["/api/import" {:post (fn [req] (import-handler ds req))}]
+                 ["/api/activities" {:get (fn [req] (activities-handler ds req))}]])
         app (reitit.ring/ring-handler
              router
              (reitit.ring/create-resource-handler {:path "/"}))]
