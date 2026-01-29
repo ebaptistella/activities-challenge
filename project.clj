@@ -4,7 +4,18 @@
   :license {:name "MIT"
             :url "https://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.12.2"]
-                 [migratus/migratus "1.4.5"]]
+                 [ring/ring-core "1.12.2"]
+                 [ring/ring-jetty-adapter "1.12.2"]
+                 [metosin/reitit-ring "0.7.1"]
+                 [org.postgresql/postgresql "42.7.3"]
+                 [com.github.seancorfield/next.jdbc "1.3.981"]
+                 [migratus/migratus "1.4.5"]
+                 [clojure-tools/clojure-tools "1.0.0"]
+                 [org.clojure/tools.logging "1.3.0"]
+                 [org.apache.logging.log4j/log4j-api "2.23.1"]
+                 [org.apache.logging.log4j/log4j-core "2.23.1"]
+                 [org.apache.logging.log4j/log4j-slf4j2-impl "2.23.1"]]
+  :plugins [[migratus/migratus-lein "0.7.3"]]
   :main ^:skip-aot challenge.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
