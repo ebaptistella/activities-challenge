@@ -20,6 +20,7 @@
                  [org.clojure/data.csv "1.0.1"]]
   :plugins [[lein-cljsbuild "1.1.8"]]
   :source-paths ["src"]
+  :resource-paths ["resources"]
   :clean-targets ^{:protect false} ["resources/public/js" "target"]
   :cljsbuild {:builds [{:id "app"
                         :source-paths ["src"]
@@ -35,4 +36,5 @@
   :main ^:skip-aot challenge.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
-                       :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
+                       :jvm-opts ["-Dclojure.compiler.direct-linking=true"]
+                       :prep-tasks [["compile"] ["cljsbuild" "once" "app"]]}})
