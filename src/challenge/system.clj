@@ -1,15 +1,11 @@
 (ns challenge.system
-  (:require [challenge.config :as config]
-            [com.stuartsierra.component :as component]
-            [next.jdbc :as jdbc]
-            [migratus.core :as migratus]
-            [reitit.ring :as reitit.ring]
-            [ring.adapter.jetty :as jetty]
-            [ring.middleware.multipart-params :as multipart]
-            [ring.util.response :as response]
-            [volis-challenge.csv :as csv]
-            [volis-challenge.db :as db]
-            [clojure.java.io :as io]))
+  (:require
+   [challenge.config :as config]
+   [com.stuartsierra.component :as component]
+   [migratus.core :as migratus]
+   [next.jdbc :as jdbc]
+   [ring.adapter.jetty :as jetty]
+   [volis-challenge.api :as api]))
 
 (defn- jdbc-spec-from-config [cfg]
   (let [db (:database cfg)]
@@ -36,65 +32,8 @@
 (defn- http-port-from-config [cfg]
   (get-in cfg [:http :port]))
 
-(defn- import-summary [parsed]
-  (let [{:keys [type rows errors]} parsed
-        total (count rows)
-        error-count (count errors)]
-    {:type type
-     :lines_read (+ total error-count)
-     :valid total
-     :invalid error-count
-     :errors errors}))
-
-(defn- import-handler [ds request]
-  (let [file (get-in request [:params "file"])
-        tempfile (:tempfile file)]
-    (if (nil? tempfile)
-      {:status 400
-       :headers {}
-       :body {:error "Arquivo CSV nao enviado"}}
-      (try
-        (with-open [r (io/reader tempfile)]
-          (let [parsed (csv/parse-csv-reader r)
-                {:keys [type rows]} parsed]
-            (case type
-              :planned (db/import-planned-batch! ds rows)
-              :executed (db/import-executed-batch! ds rows))
-            {:status 200
-             :headers {}
-             :body (import-summary parsed)}))
-        (catch clojure.lang.ExceptionInfo e
-          (let [data (ex-data e)]
-            {:status 400
-             :headers {}
-             :body {:error (.getMessage e)
-                    :details data}}))))))
-
-(defn- activities-handler [ds request]
-  (let [date (get-in request [:query-params "date"])
-        activity (get-in request [:query-params "activity"])
-        type (get-in request [:query-params "type"])]
-    (if (nil? date)
-      {:status 400
-       :headers {}
-       :body {:error "Parametro 'date' e obrigatorio"}}
-      (let [result (db/activities-by-date ds {:date date
-                                              :activity activity
-                                              :type type})]
-        {:status 200
-         :headers {}
-         :body result}))))
-
 (defn- make-handler [ds]
-  (let [router (reitit.ring/router
-                [["/health" {:get (fn [_] {:status 200 :headers {} :body "ok"})}]
-                 ["/" {:get (fn [_] (response/resource-response "public/index.html"))}]
-                 ["/api/import" {:post (fn [req] (import-handler ds req))}]
-                 ["/api/activities" {:get (fn [req] (activities-handler ds req))}]])
-        app (reitit.ring/ring-handler
-             router
-             (reitit.ring/create-resource-handler {:path "/"}))]
-    (multipart/wrap-multipart-params app)))
+  (api/handler ds))
 
 (defrecord ConfigComponent []
   component/Lifecycle
