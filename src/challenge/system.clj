@@ -4,7 +4,8 @@
             [next.jdbc :as jdbc]
             [migratus.core :as migratus]
             [ring.adapter.jetty :as jetty]
-            [reitit.ring :as reitit.ring]))
+            [reitit.ring :as reitit.ring]
+            [ring.util.response :as response]))
 
 (defn- jdbc-spec-from-config [cfg]
   (let [db (:database cfg)]
@@ -34,7 +35,9 @@
 (defn- handler []
   (reitit.ring/ring-handler
    (reitit.ring/router
-    [["/health" {:get (fn [_] {:status 200 :headers {} :body "ok"})}]])))
+    [["/health" {:get (fn [_] {:status 200 :headers {} :body "ok"})}]
+     ["/" {:get (fn [_] (response/resource-response "public/index.html"))}]])
+   (reitit.ring/create-resource-handler {:path "/"})))
 
 (defrecord ConfigComponent []
   component/Lifecycle
