@@ -13,3 +13,5 @@ pom.xml.asc
 .cursor/
 .clj-kondo/
 .DS_Store
+.env
+.env.local
