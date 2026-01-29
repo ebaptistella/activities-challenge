@@ -8,12 +8,16 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/* && 
     lein self-install
 
 COPY project.clj ./
-RUN lein deps
+RUN --mount=type=cache,target=/root/.m2/repository \
+    --mount=type=cache,target=/root/.lein \
+    lein deps
 
 COPY src/ ./src/
 COPY resources/ ./resources/
 
-RUN lein cljsbuild once app && lein uberjar
+RUN --mount=type=cache,target=/root/.m2/repository \
+    --mount=type=cache,target=/root/.lein \
+    lein uberjar
 
 FROM public.ecr.aws/docker/library/eclipse-temurin:21-jdk
 

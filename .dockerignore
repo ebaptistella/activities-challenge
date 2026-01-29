@@ -1,0 +1,14 @@
+target/
+.git/
+.gitignore
+.cursor/
+.clj-kondo/
+.DS_Store
+*.md
+doc/
+test/
+.env
+.env.local
+docker/
+WORKFLOW.md
+resources/public/js/out

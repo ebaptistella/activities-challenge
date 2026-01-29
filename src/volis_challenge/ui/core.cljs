@@ -13,15 +13,15 @@
     ""
     (let [date (js/Date. date-str)]
       (str (.getFullYear date) "-"
-           (-> (.getMonth date) inc (str) (.padStart 2 "0")) "-"
-           (-> (.getDate date) (str) (.padStart 2 "0"))))))
+           (-> (.getMonth date) inc str (.padStart 2 "0")) "-"
+           (-> (.getDate date) str (.padStart 2 "0"))))))
 
 (defn today-date
   []
   (let [now (js/Date.)]
     (str (.getFullYear now) "-"
-         (-> (.getMonth now) inc (str) (.padStart 2 "0")) "-"
-         (-> (.getDate now) (str) (.padStart 2 "0")))))
+         (-> (.getMonth now) inc str (.padStart 2 "0")) "-"
+         (-> (.getDate now) str (.padStart 2 "0")))))
 
 (defn update-filter!
   [key value]
@@ -181,10 +181,10 @@
                "<p class=\"text-lg opacity-90\">Gerenciamento de Atividades Planejadas e Executadas</p>"
                "</header>"
                "<main class=\"p-8 md:p-8\">"
-               "<section class=\"mb-10\">"
+               "<section class=\"mb-10 upload-section\">"
                "<h2 class=\"text-2xl mb-5 text-gray-800\">Upload de Arquivos CSV</h2>"
                "</section>"
-               "<section class=\"mb-10\">"
+               "<section class=\"mb-10 filters-section\">"
                "<h2 class=\"text-2xl mb-5 text-gray-800\">Filtros</h2>"
                "</section>"
                "</main>"))

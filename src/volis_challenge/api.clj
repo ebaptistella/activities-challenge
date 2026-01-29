@@ -55,12 +55,24 @@
        :headers {}
        :body {:error "Parametro 'date' e obrigatorio"}}
       (let [result (domain/plano-x-realizado ds {:date date
-                                                  :activity activity
-                                                  :activity_type activity-type
-                                                  :type type})]
+                                                 :activity activity
+                                                 :activity_type activity-type
+                                                 :type type})]
         {:status 200
          :headers {}
          :body result}))))
+
+(defn static-file-handler
+  [request]
+  (let [uri (:uri request)
+        resource-path (if (= uri "/")
+                        "public/index.html"
+                        (str "public" uri))
+        resource (response/resource-response resource-path)]
+    (or resource
+        {:status 404
+         :headers {}
+         :body "Not found"})))
 
 (defn routes
   [ds]
@@ -72,8 +84,6 @@
 (defn handler
   [ds]
   (let [router (reitit.ring/router (routes ds))
-        app (reitit.ring/ring-handler
-             router
-             (reitit.ring/create-resource-handler {:path "/"}))]
-    (multipart/wrap-multipart-params app)))
+        reitit-handler (reitit.ring/ring-handler router static-file-handler)]
+    (multipart/wrap-multipart-params reitit-handler)))
 
