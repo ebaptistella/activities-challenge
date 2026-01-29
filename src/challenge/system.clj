@@ -3,9 +3,13 @@
             [com.stuartsierra.component :as component]
             [next.jdbc :as jdbc]
             [migratus.core :as migratus]
-            [ring.adapter.jetty :as jetty]
             [reitit.ring :as reitit.ring]
-            [ring.util.response :as response]))
+            [ring.adapter.jetty :as jetty]
+            [ring.middleware.multipart-params :as multipart]
+            [ring.util.response :as response]
+            [volis-challenge.csv :as csv]
+            [volis-challenge.db :as db]
+            [clojure.java.io :as io]))
 
 (defn- jdbc-spec-from-config [cfg]
   (let [db (:database cfg)]
@@ -32,12 +36,49 @@
 (defn- http-port-from-config [cfg]
   (get-in cfg [:http :port]))
 
-(defn- handler []
-  (reitit.ring/ring-handler
-   (reitit.ring/router
-    [["/health" {:get (fn [_] {:status 200 :headers {} :body "ok"})}]
-     ["/" {:get (fn [_] (response/resource-response "public/index.html"))}]])
-   (reitit.ring/create-resource-handler {:path "/"})))
+(defn- import-summary [parsed]
+  (let [{:keys [type rows errors]} parsed
+        total (count rows)
+        error-count (count errors)]
+    {:type type
+     :lines_read (+ total error-count)
+     :valid total
+     :invalid error-count
+     :errors errors}))
+
+(defn- import-handler [ds request]
+  (let [file (get-in request [:params "file"])
+        tempfile (:tempfile file)]
+    (if (nil? tempfile)
+      {:status 400
+       :headers {}
+       :body {:error "Arquivo CSV nao enviado"}}
+      (try
+        (with-open [r (io/reader tempfile)]
+          (let [parsed (csv/parse-csv-reader r)
+                {:keys [type rows]} parsed]
+            (case type
+              :planned (db/import-planned-batch! ds rows)
+              :executed (db/import-executed-batch! ds rows))
+            {:status 200
+             :headers {}
+             :body (import-summary parsed)}))
+        (catch clojure.lang.ExceptionInfo e
+          (let [data (ex-data e)]
+            {:status 400
+             :headers {}
+             :body {:error (.getMessage e)
+                    :details data}}))))))
+
+(defn- make-handler [ds]
+  (let [router (reitit.ring/router
+                [["/health" {:get (fn [_] {:status 200 :headers {} :body "ok"})}]
+                 ["/" {:get (fn [_] (response/resource-response "public/index.html"))}]
+                 ["/api/import" {:post (fn [req] (import-handler ds req))}]])
+        app (reitit.ring/ring-handler
+             router
+             (reitit.ring/create-resource-handler {:path "/"}))]
+    (multipart/wrap-multipart-params app)))
 
 (defrecord ConfigComponent []
   component/Lifecycle
@@ -78,12 +119,13 @@
 (defn migration-component []
   (map->MigrationComponent {}))
 
-(defrecord HttpServerComponent [config]
+(defrecord HttpServerComponent [config database]
   component/Lifecycle
   (start [this]
     (let [cfg (:value config)
           port (http-port-from-config cfg)
-          server (jetty/run-jetty (handler) {:port port :join? false})]
+          ds (:datasource database)
+          server (jetty/run-jetty (make-handler ds) {:port port :join? false})]
       (assoc this :server server)))
   (stop [this]
     (when-let [server (:server this)]
@@ -98,5 +140,5 @@
    :config (config-component)
    :database (component/using (database-component) [:config])
    :migrations (component/using (migration-component) [:config :database])
-   :http (component/using (http-server-component) [:config])))
+   :http (component/using (http-server-component) [:config :database])))
 
