@@ -4,7 +4,7 @@
             [migratus.core :as migratus]
             [next.jdbc :as jdbc]
             [ring.adapter.jetty :as jetty]
-            [challenge.api.http-server :as http-server]
+            [challenge.api.diplomat.http-server :as http-server]
             [clojure.tools.logging :as log]))
 
 (defn- jdbc-spec-from-config [cfg]

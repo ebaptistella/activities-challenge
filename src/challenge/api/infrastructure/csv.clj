@@ -1,7 +1,8 @@
-(ns challenge.api.csv
-  "CSV parsing and validation logic."
+(ns challenge.api.diplomat.csv
+  "CSV parsing (infrastructure layer for file processing)."
   (:require [clojure.data.csv :as csv]
             [clojure.string :as string]
+            [challenge.api.adapters :as adapters]
             [clojure.tools.logging :as log])
   (:import (java.io Reader)
            (java.time LocalDate)))
@@ -77,11 +78,11 @@
                                       :reason "Invalid date"}}
           (nil? parsed-amount) {:error {:line line
                                         :reason "Invalid amount"}}
-          :else {:activity {:date parsed-date
-                            :activity activity
-                            :activity_type activity-type
-                            :unit unit
-                            :amount parsed-amount}})))))
+          :else {:activity (adapters/csv-row->activity {:date parsed-date
+                                                        :activity activity
+                                                        :activity_type activity-type
+                                                        :unit unit
+                                                        :amount parsed-amount})})))))
 
 (defn read-csv-reader
   ^java.util.List
@@ -122,8 +123,8 @@
                              (map-indexed vector body))
               duration (- (System/currentTimeMillis) start-time)
               parsed-result {:type kind
-                             :rows (:rows result)
-                             :errors (:errors result)}]
+                            :rows (:rows result)
+                            :errors (:errors result)}]
           (log/info "CSV parse completed" {:type kind
                                            :total-lines total-lines
                                            :valid (count (:rows result))
