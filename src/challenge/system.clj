@@ -67,14 +67,16 @@
           uri (connection-uri-from-config cfg)
           migration-resource (io/resource "migrations")
           migration-dir-path (if migration-resource
-                               (let [url (.toURL migration-resource)
-                                     file (io/file url)]
-                                 (if (.exists file)
-                                   (.getAbsolutePath file)
-                                   (let [path (.getPath url)]
-                                     (if (.startsWith path "file:")
-                                       (.substring path 5)
-                                       path))))
+                               (let [url-str (str migration-resource)]
+                                 (if (.startsWith url-str "file:")
+                                   (let [file-path (.substring url-str 5)
+                                         file (io/file file-path)]
+                                     (if (.exists file)
+                                       (.getAbsolutePath file)
+                                       file-path))
+                                   (if (.startsWith url-str "jar:")
+                                     "migrations"
+                                     "resources/migrations")))
                                "resources/migrations")
           migratus-config {:store :database
                            :migration-dir migration-dir-path
