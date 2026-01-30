@@ -51,6 +51,7 @@
     (let [cfg (:value config)
           spec (jdbc-spec-from-config cfg)
           datasource (jdbc/get-datasource spec)]
+      (println "Conectando ao banco de dados:" (:dbname spec) "em" (:host spec))
       (assoc this :datasource datasource)))
   (stop [this]
     (dissoc this :datasource)))
