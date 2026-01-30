@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_activity_date ON activity (date);

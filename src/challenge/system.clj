@@ -65,36 +65,12 @@
   (start [this]
     (let [cfg (:value config)
           uri (connection-uri-from-config cfg)
-          migration-resource (io/resource "migrations")
-          migration-dir-path (if migration-resource
-                               (let [url-str (str migration-resource)]
-                                 (if (.startsWith url-str "file:")
-                                   (let [file-path (.substring url-str 5)
-                                         file (io/file file-path)]
-                                     (if (.exists file)
-                                       (.getAbsolutePath file)
-                                       file-path))
-                                   (if (.startsWith url-str "jar:")
-                                     "migrations"
-                                     "resources/migrations")))
-                               "resources/migrations")
           migratus-config {:store :database
-                           :migration-dir migration-dir-path
+                           :migration-dir "migrations"
                            :db {:connection-uri uri}}]
       (println "Executando migrations...")
-      (println "Diretório de migrations:" migration-dir-path)
-      (println "URI de conexão:" uri)
-      (try
-        (let [pending (migratus/pending-list migratus-config)]
-          (println "Migrations pendentes:" (count pending))
-          (doseq [m pending]
-            (println "  -" (:name m))))
-        (migratus/migrate migratus-config)
-        (println "Migrations executadas com sucesso")
-        (catch Exception e
-          (println "Erro ao executar migrations:" (.getMessage e))
-          (.printStackTrace e)
-          (throw e)))
+      (migratus/migrate migratus-config)
+      (println "Migrations executadas com sucesso")
       (assoc this :migratus-config migratus-config)))
   (stop [this]
     this))
