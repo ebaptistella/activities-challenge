@@ -1,7 +1,7 @@
 services:
   postgres:
     image: public.ecr.aws/docker/library/postgres:latest
-    container_name: volis-challenge-postgres
+    container_name: challenge-postgres
     environment:
       POSTGRES_DB: challenge
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -20,7 +20,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.app
-    container_name: volis-challenge-app
+    container_name: challenge-app
     depends_on:
       - postgres
     environment:

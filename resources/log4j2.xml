@@ -13,10 +13,6 @@
       <AppenderRef ref="Console"/>
       <AppenderRef ref="FileAppender"/>
     </Root>
-    <Logger name="volis-challenge" level="debug" additivity="false">
-      <AppenderRef ref="Console"/>
-      <AppenderRef ref="FileAppender"/>
-    </Logger>
     <Logger name="challenge" level="debug" additivity="false">
       <AppenderRef ref="Console"/>
       <AppenderRef ref="FileAppender"/>

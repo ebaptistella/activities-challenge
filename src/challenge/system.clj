@@ -5,7 +5,7 @@
    [migratus.core :as migratus]
    [next.jdbc :as jdbc]
    [ring.adapter.jetty :as jetty]
-   [volis-challenge.api :as api]
+   [challenge.api :as api]
    [clojure.tools.logging :as log]))
 
 (defn- jdbc-spec-from-config [cfg]

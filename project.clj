@@ -1,6 +1,6 @@
 (defproject challenge "0.1.0-SNAPSHOT"
-  :description "Volis Challenge"
-  :url "https://github.com/ebaptistella/volis-challenge"
+  :description "Challenge"
+  :url "https://github.com/ebaptistella/challenge"
   :license {:name "MIT"
             :url "https://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.12.2"]
@@ -29,7 +29,7 @@
   :clean-targets ^{:protect false} ["resources/public/js" "target"]
   :cljsbuild {:builds [{:id "app"
                         :source-paths ["src"]
-                        :compiler {:main volis-challenge.ui.core
+                        :compiler {:main challenge.ui.core
                                    :asset-path "/js/out"
                                    :output-to "resources/public/js/app.js"
                                    :output-dir "resources/public/js/out"
