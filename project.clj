@@ -23,7 +23,8 @@
                  [cljsjs/react "18.2.0-1"]
                  [cljsjs/react-dom "18.2.0-1"]]
   :plugins [[lein-cljsbuild "1.1.8"]
-            [lein-shell "0.5.0"]]
+            [lein-shell "0.5.0"]
+            [lein-cljfmt "0.9.0"]]
   :source-paths ["src"]
   :resource-paths ["resources"]
   :clean-targets ^{:protect false} ["resources/public/js" "target"]
@@ -42,6 +43,8 @@
   :target-path "target/%s"
   :aliases {"lint" ["shell" "clj-kondo" "--lint" "src" "--parallel"]
             "lint-fix" ["shell" "clj-kondo" "--copy-configs" "--lint" "src" "--parallel"]
+            "format" ["cljfmt" "check"]
+            "format-fix" ["cljfmt" "fix"]
             "check-all" ["do" ["check"] ["shell" "clj-kondo" "--lint" "src" "--parallel"]]
             "test-all" ["do" ["test"] ["lint"]]
             "clean-all" ["do" ["clean"] ["cljsbuild" "clean"]]

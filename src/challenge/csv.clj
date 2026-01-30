@@ -125,13 +125,13 @@
                              (map-indexed vector body))
               duration (- (System/currentTimeMillis) start-time)
               parsed-result {:type kind
-                            :rows (:rows result)
-                            :errors (:errors result)}]
+                             :rows (:rows result)
+                             :errors (:errors result)}]
           (log/info "CSV parse completed" {:type kind
-                                             :total-lines total-lines
-                                             :valid (count (:rows result))
-                                             :invalid (count (:errors result))
-                                             :duration-ms duration})
+                                           :total-lines total-lines
+                                           :valid (count (:rows result))
+                                           :invalid (count (:errors result))
+                                           :duration-ms duration})
           parsed-result))
       (catch Exception e
         (let [duration (- (System/currentTimeMillis) start-time)]

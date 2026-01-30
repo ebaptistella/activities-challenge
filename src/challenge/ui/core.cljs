@@ -70,11 +70,11 @@
         query-params (logic/build-query-params filters)]
     (set-activities-loading! true)
     (http/fetch-activities query-params
-                          (fn [data]
-                            (let [activities-data (adapters/api-response->activities data)]
-                              (set-activities! activities-data)))
-                          (fn [error-msg]
-                            (set-activities-error! error-msg)))))
+                           (fn [data]
+                             (let [activities-data (adapters/api-response->activities data)]
+                               (set-activities! activities-data)))
+                           (fn [error-msg]
+                             (set-activities-error! error-msg)))))
 
 (defn handle-upload-success
   "Processes file upload success.
@@ -84,10 +84,10 @@
   [data]
   (let [summary (adapters/api-response->upload-summary data)]
     (set-upload-status! {:success true
-                          :type (:type summary)
-                          :valid (:valid summary)
-                          :invalid (:invalid summary)
-                          :loading false})
+                         :type (:type summary)
+                         :valid (:valid summary)
+                         :invalid (:invalid summary)
+                         :loading false})
     (fetch-activities!)
     (clear-upload-status!)))
 
@@ -98,8 +98,8 @@
   - message: String with error message"
   [message]
   (set-upload-status! {:error true
-                        :message message
-                        :loading false})
+                       :message message
+                       :loading false})
   (clear-upload-status!))
 
 (defn upload-csv!

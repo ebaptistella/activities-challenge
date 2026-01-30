@@ -177,11 +177,11 @@
                                          amount-planned (or (:amount_planned row) (:activity/amount_planned row))
                                          amount-executed (or (:amount_executed row) (:activity/amount_executed row))]
                                      (log/debug "Normalizing record" {:row row
-                                                                         :row-keys (keys row)
-                                                                         :amount_planned amount-planned
-                                                                         :amount_executed amount-executed
-                                                                         :amount_planned-type (type amount-planned)
-                                                                         :amount_executed-type (type amount-executed)})
+                                                                      :row-keys (keys row)
+                                                                      :amount_planned amount-planned
+                                                                      :amount_executed amount-executed
+                                                                      :amount_planned-type (type amount-planned)
+                                                                      :amount_executed-type (type amount-executed)})
                                      {:activity activity-key
                                       :activity_type activity-type-key
                                       :unit unit-key
@@ -193,11 +193,11 @@
         (log/info "Activities query completed" {:filters filters :rows-count (count normalized-rows) :duration-ms duration})
         (when sample-row
           (log/debug "Sample record returned" {:sample-row sample-row
-                                                      :keys (keys sample-row)
-                                                      :amount_planned (:amount_planned sample-row)
-                                                      :amount_executed (:amount_executed sample-row)
-                                                      :amount_planned-type (type (:amount_planned sample-row))
-                                                      :amount_executed-type (type (:amount_executed sample-row))}))
+                                               :keys (keys sample-row)
+                                               :amount_planned (:amount_planned sample-row)
+                                               :amount_executed (:amount_executed sample-row)
+                                               :amount_planned-type (type (:amount_planned sample-row))
+                                               :amount_executed-type (type (:amount_executed sample-row))}))
         normalized-rows)
       (catch Exception e
         (let [duration (- (System/currentTimeMillis) start-time)]
