@@ -171,6 +171,13 @@
   []
   (fetch-activities!))
 
+(defn clear-filters!
+  []
+  (swap! app-state assoc :filters {:date (today-date)
+                                   :activity ""
+                                   :activity-type ""})
+  (fetch-activities!))
+
 (defn upload-status-message
   [status]
   (when status
@@ -194,7 +201,7 @@
 (defn render-filters
   []
   (let [filters (:filters @app-state)]
-    [:div.grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-4.gap-5.items-end
+    [:div.grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-5.gap-5.items-end
      [:div.flex.flex-col.gap-2
       [:label.font-semibold.text-gray-800.text-sm {:for "date-filter"} "Data:"]
       [:input#date-filter.p-3.border-2.border-gray-300.rounded-md.text-base.transition-colors.focus:outline-none.focus:border-indigo-500
@@ -218,7 +225,11 @@
      [:div.flex.flex-col.gap-2
       [:button#apply-filters-btn.p-3.px-6.border-none.rounded-md.text-base.font-semibold.cursor-pointer.transition-all.bg-gradient-to-r.from-indigo-500.to-purple-600.text-white.hover:-translate-y-0.5.hover:shadow-lg.active:translate-y-0
        {:on-click handle-apply-filters}
-       "Aplicar Filtros"]]]))
+       "Aplicar Filtros"]]
+     [:div.flex.flex-col.gap-2
+      [:button#clear-filters-btn.p-3.px-6.border-2.border-gray-300.rounded-md.text-base.font-semibold.cursor-pointer.transition-all.bg-white.text-gray-700.hover:bg-gray-50.hover:border-gray-400.active:bg-gray-100
+       {:on-click clear-filters!}
+       "Limpar Filtros"]]]))
 
 (defn render-upload
   []
