@@ -51,6 +51,7 @@
     (let [cfg (:value config)
           spec (jdbc-spec-from-config cfg)
           datasource (jdbc/get-datasource spec)]
+      (println "Conectando ao banco de dados:" (:dbname spec) "em" (:host spec))
       (assoc this :datasource datasource)))
   (stop [this]
     (dissoc this :datasource)))
@@ -64,9 +65,11 @@
     (let [cfg (:value config)
           uri (connection-uri-from-config cfg)
           migratus-config {:store :database
-                           :migration-dir "resources/migrations"
+                           :migration-dir "migrations"
                            :db {:connection-uri uri}}]
+      (println "Executando migrations...")
       (migratus/migrate migratus-config)
+      (println "Migrations executadas com sucesso")
       (assoc this :migratus-config migratus-config)))
   (stop [this]
     this))
@@ -95,5 +98,5 @@
    :config (config-component)
    :database (component/using (database-component) [:config])
    :migrations (component/using (migration-component) [:config :database])
-   :http (component/using (http-server-component) [:config :database])))
+   :http (component/using (http-server-component) [:config :database :migrations])))
 
