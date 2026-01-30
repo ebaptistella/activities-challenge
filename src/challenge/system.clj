@@ -5,7 +5,8 @@
    [migratus.core :as migratus]
    [next.jdbc :as jdbc]
    [ring.adapter.jetty :as jetty]
-   [volis-challenge.api :as api]))
+   [volis-challenge.api :as api]
+   [clojure.tools.logging :as log]))
 
 (defn- jdbc-spec-from-config [cfg]
   (let [db (:database cfg)]
@@ -38,8 +39,12 @@
 (defrecord ConfigComponent []
   component/Lifecycle
   (start [this]
-    (assoc this :value (config/load-config)))
+    (log/info "Iniciando ConfigComponent")
+    (let [cfg (config/load-config)]
+      (log/info "ConfigComponent iniciado com sucesso")
+      (assoc this :value cfg)))
   (stop [this]
+    (log/info "Parando ConfigComponent")
     (dissoc this :value)))
 
 (defn config-component []
@@ -48,12 +53,19 @@
 (defrecord DatabaseComponent [config]
   component/Lifecycle
   (start [this]
+    (log/info "Iniciando DatabaseComponent")
     (let [cfg (:value config)
-          spec (jdbc-spec-from-config cfg)
-          datasource (jdbc/get-datasource spec)]
-      (println "Conectando ao banco de dados:" (:dbname spec) "em" (:host spec))
-      (assoc this :datasource datasource)))
+          spec (jdbc-spec-from-config cfg)]
+      (log/info "Conectando ao banco de dados" {:dbname (:dbname spec) :host (:host spec) :port (:port spec)})
+      (try
+        (let [datasource (jdbc/get-datasource spec)]
+          (log/info "DatabaseComponent iniciado com sucesso" {:dbname (:dbname spec)})
+          (assoc this :datasource datasource))
+        (catch Exception e
+          (log/error e "Erro ao conectar ao banco de dados" {:dbname (:dbname spec) :host (:host spec)})
+          (throw e)))))
   (stop [this]
+    (log/info "Parando DatabaseComponent")
     (dissoc this :datasource)))
 
 (defn database-component []
@@ -62,16 +74,24 @@
 (defrecord MigrationComponent [config database]
   component/Lifecycle
   (start [this]
+    (log/info "Iniciando MigrationComponent")
     (let [cfg (:value config)
           uri (connection-uri-from-config cfg)
           migratus-config {:store :database
                            :migration-dir "migrations"
-                           :db {:connection-uri uri}}]
-      (println "Executando migrations...")
-      (migratus/migrate migratus-config)
-      (println "Migrations executadas com sucesso")
+                           :db {:connection-uri uri}}
+          start-time (System/currentTimeMillis)]
+      (log/info "Executando migrations")
+      (try
+        (migratus/migrate migratus-config)
+        (let [duration (- (System/currentTimeMillis) start-time)]
+          (log/info "Migrations executadas com sucesso" {:duration-ms duration}))
+        (catch Exception e
+          (log/error e "Erro ao executar migrations")
+          (throw e)))
       (assoc this :migratus-config migratus-config)))
   (stop [this]
+    (log/info "Parando MigrationComponent")
     this))
 
 (defn migration-component []
@@ -80,13 +100,22 @@
 (defrecord HttpServerComponent [config database]
   component/Lifecycle
   (start [this]
+    (log/info "Iniciando HttpServerComponent")
     (let [cfg (:value config)
-          port (http-port-from-config cfg)
-          ds (:datasource database)
-          server (jetty/run-jetty (make-handler ds) {:port port :join? false})]
-      (assoc this :server server)))
+          port (http-port-from-config cfg)]
+      (log/info "Iniciando servidor HTTP" {:port port})
+      (try
+        (let [ds (:datasource database)
+              server (jetty/run-jetty (make-handler ds) {:port port :join? false})]
+          (log/info "Servidor HTTP iniciado com sucesso" {:port port})
+          (assoc this :server server))
+        (catch Exception e
+          (log/error e "Erro ao iniciar servidor HTTP" {:port port})
+          (throw e)))))
   (stop [this]
+    (log/info "Parando HttpServerComponent")
     (when-let [server (:server this)]
+      (log/info "Parando servidor HTTP")
       (.stop server))
     (dissoc this :server)))
 
