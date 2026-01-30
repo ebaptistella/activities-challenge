@@ -1,1 +1,0 @@
-CREATE INDEX IF NOT EXISTS idx_activity_activity_type ON activity (activity_type);
