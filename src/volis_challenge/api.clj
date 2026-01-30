@@ -4,6 +4,7 @@
    [clojure.data.json :as json]
    [reitit.ring :as reitit.ring]
    [ring.middleware.multipart-params :as multipart]
+   [ring.middleware.params :as params]
    [ring.util.response :as response]
    [volis-challenge.csv :as csv]
    [volis-challenge.db :as db]
@@ -47,15 +48,16 @@
 
 (defn activities-handler
   [ds request]
-  (let [date (get-in request [:query-params "date"])
-        activity (get-in request [:query-params "activity"])
-        activity-type (get-in request [:query-params "activity_type"])
-        type (get-in request [:query-params "type"])]
-    (if (or (nil? date) (empty? date))
+  (let [query-params (:query-params request)
+        date (get query-params "date")
+        activity (get query-params "activity")
+        activity-type (get query-params "activity_type")
+        type (get query-params "type")]
+    (if (or (nil? date) (empty? (str date)))
       {:status 400
        :headers {"Content-Type" "application/json"}
        :body (json/write-str {:error "Parametro 'date' e obrigatorio"})}
-      (let [result (domain/plano-x-realizado ds {:date date
+      (let [result (domain/plano-x-realizado ds {:date (str date)
                                                  :activity activity
                                                  :activity_type activity-type
                                                  :type type})]
@@ -86,5 +88,7 @@
   [ds]
   (let [router (reitit.ring/router (routes ds))
         reitit-handler (reitit.ring/ring-handler router static-file-handler)]
-    (multipart/wrap-multipart-params reitit-handler)))
+    (-> reitit-handler
+        params/wrap-params
+        multipart/wrap-multipart-params)))
 
