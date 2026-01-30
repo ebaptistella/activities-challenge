@@ -2,7 +2,8 @@
   (:require
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
-   [clojure.string :as string])
+   [clojure.string :as string]
+   [clojure.tools.logging :as log])
   (:import
    (java.io Reader)
    (java.time LocalDate)))
@@ -81,25 +82,50 @@
 
 (defn parse-csv-reader
   [^Reader r]
-  (let [rows (read-csv-reader r)
-        header (first rows)
-        body (next rows)
-        kind (detect-type-from-header header)
-        idx (header-indexes header)
-        result (reduce (fn [acc [i row]]
-                         (let [line (+ 2 i)
-                               row-result (row->activity idx line row)]
-                           (if-let [activity (:activity row-result)]
-                             (update acc :rows conj activity)
-                             (update acc :errors conj (:error row-result)))))
-                       {:rows [] :errors []}
-                       (map-indexed vector body))]
-    {:type kind
-     :rows (:rows result)
-     :errors (:errors result)}))
+  (let [start-time (System/currentTimeMillis)]
+    (log/info "Iniciando parse do CSV")
+    (try
+      (let [rows (read-csv-reader r)
+            total-lines (count rows)
+            header (first rows)
+            body (next rows)
+            kind (detect-type-from-header header)
+            idx (header-indexes header)]
+        (log/info "CSV lido" {:total-lines total-lines :type kind :header header})
+        (let [result (reduce (fn [acc [i row]]
+                               (let [line (+ 2 i)
+                                     row-result (row->activity idx line row)]
+                                 (if-let [activity (:activity row-result)]
+                                   (update acc :rows conj activity)
+                                   (do
+                                     (log/debug "Erro ao processar linha do CSV" {:line line :error (:error row-result)})
+                                     (update acc :errors conj (:error row-result))))))
+                             {:rows [] :errors []}
+                             (map-indexed vector body))
+              duration (- (System/currentTimeMillis) start-time)
+              parsed-result {:type kind
+                            :rows (:rows result)
+                            :errors (:errors result)}]
+          (log/info "Parse do CSV concluído" {:type kind
+                                             :total-lines total-lines
+                                             :valid (count (:rows result))
+                                             :invalid (count (:errors result))
+                                             :duration-ms duration})
+          parsed-result))
+      (catch Exception e
+        (let [duration (- (System/currentTimeMillis) start-time)]
+          (log/error e "Erro ao fazer parse do CSV" {:duration-ms duration})
+          (throw e))))))
 
 (defn parse-csv-file
   [path]
-  (with-open [r (io/reader path)]
-    (parse-csv-reader r)))
+  (log/info "Iniciando parse de arquivo CSV" {:path path})
+  (try
+    (let [result (with-open [r (io/reader path)]
+                   (parse-csv-reader r))]
+      (log/info "Parse de arquivo CSV concluído" {:path path :type (:type result)})
+      result)
+    (catch Exception e
+      (log/error e "Erro ao fazer parse de arquivo CSV" {:path path})
+      (throw e))))
 
