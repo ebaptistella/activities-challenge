@@ -14,7 +14,7 @@
     (cond
       (contains? columns "Amount planned") :planned
       (contains? columns "Amount executed") :executed
-      :else (throw (ex-info "Tipo de CSV inválido, header não contém coluna de amount conhecida" {:header header})))))
+      :else (throw (ex-info "Invalid CSV type, header does not contain known amount column" {:header header})))))
 
 (defn parse-number
   [s]
@@ -61,14 +61,14 @@
                           (into []))]
     (if (seq empty-fields)
       {:error {:line line
-               :reason (str "Campos obrigatorios vazios: " (string/join ", " empty-fields))}}
+               :reason (str "Required fields empty: " (string/join ", " empty-fields))}}
       (let [parsed-date (parse-date date)
             parsed-amount (parse-number amount)]
         (cond
           (nil? parsed-date) {:error {:line line
-                                      :reason "Data invalida"}}
+                                      :reason "Invalid date"}}
           (nil? parsed-amount) {:error {:line line
-                                        :reason "Amount invalido"}}
+                                        :reason "Invalid amount"}}
           :else {:activity {:date parsed-date
                             :activity activity
                             :activity_type activity-type
@@ -83,7 +83,7 @@
 (defn parse-csv-reader
   [^Reader r]
   (let [start-time (System/currentTimeMillis)]
-    (log/info "Iniciando parse do CSV")
+    (log/info "Starting CSV parse")
     (try
       (let [rows (read-csv-reader r)
             total-lines (count rows)
@@ -91,14 +91,14 @@
             body (next rows)
             kind (detect-type-from-header header)
             idx (header-indexes header)]
-        (log/info "CSV lido" {:total-lines total-lines :type kind :header header})
+        (log/info "CSV read" {:total-lines total-lines :type kind :header header})
         (let [result (reduce (fn [acc [i row]]
                                (let [line (+ 2 i)
                                      row-result (row->activity idx line row)]
                                  (if-let [activity (:activity row-result)]
                                    (update acc :rows conj activity)
                                    (do
-                                     (log/debug "Erro ao processar linha do CSV" {:line line :error (:error row-result)})
+                                     (log/debug "Error processing CSV line" {:line line :error (:error row-result)})
                                      (update acc :errors conj (:error row-result))))))
                              {:rows [] :errors []}
                              (map-indexed vector body))
@@ -106,7 +106,7 @@
               parsed-result {:type kind
                             :rows (:rows result)
                             :errors (:errors result)}]
-          (log/info "Parse do CSV concluído" {:type kind
+          (log/info "CSV parse completed" {:type kind
                                              :total-lines total-lines
                                              :valid (count (:rows result))
                                              :invalid (count (:errors result))
@@ -114,18 +114,18 @@
           parsed-result))
       (catch Exception e
         (let [duration (- (System/currentTimeMillis) start-time)]
-          (log/error e "Erro ao fazer parse do CSV" {:duration-ms duration})
+          (log/error e "Error parsing CSV" {:duration-ms duration})
           (throw e))))))
 
 (defn parse-csv-file
   [path]
-  (log/info "Iniciando parse de arquivo CSV" {:path path})
+  (log/info "Starting CSV file parse" {:path path})
   (try
     (let [result (with-open [r (io/reader path)]
                    (parse-csv-reader r))]
-      (log/info "Parse de arquivo CSV concluído" {:path path :type (:type result)})
+      (log/info "CSV file parse completed" {:path path :type (:type result)})
       result)
     (catch Exception e
-      (log/error e "Erro ao fazer parse de arquivo CSV" {:path path})
+      (log/error e "Error parsing CSV file" {:path path})
       (throw e))))
 

@@ -17,37 +17,37 @@
     (instance? java.sql.Date v) (.toLocalDate ^java.sql.Date v)
     :else (try
             (let [date-str (str/trim (str v))]
-              (log/debug "Convertendo data para LocalDate" {:input v :date-str date-str})
+              (log/debug "Converting date to LocalDate" {:input v :date-str date-str})
               (java.time.LocalDate/parse date-str))
             (catch Exception e
-              (log/error e "Erro ao converter data para LocalDate" {:input v :type (type v)})
-              (throw (ex-info (str "Data inválida: " v) {:date v :error (.getMessage e)}))))))
+              (log/error e "Error converting date to LocalDate" {:input v :type (type v)})
+              (throw (ex-info (str "Invalid date: " v) {:date v :error (.getMessage e)}))))))
 
 (defn- find-activity
   [tx {:keys [date activity activity_type unit]}]
-  (log/debug "Buscando atividade" {:date date :activity activity :activity_type activity_type :unit unit})
+  (log/debug "Searching for activity" {:date date :activity activity :activity_type activity_type :unit unit})
   (let [params {:date (ensure-local-date date)
                 :activity activity
                 :activity_type activity_type
                 :unit unit}
         result (first (sql/find-by-keys tx :activity params))]
-    (log/debug "Resultado da busca de atividade" {:found (some? result)})
+    (log/debug "Activity search result" {:found (some? result)})
     result))
 
 (defn- insert-activity
   [tx {:keys [date] :as row}]
-  (log/debug "Inserindo nova atividade" {:date date :activity (:activity row)})
+  (log/debug "Inserting new activity" {:date date :activity (:activity row)})
   (let [payload (-> row
                     (assoc :date (ensure-local-date date))
                     (dissoc :amount))
         result (sql/insert! tx :activity (merge payload {:created_at (now)
                                                          :updated_at (now)}))]
-    (log/debug "Atividade inserida com sucesso")
+    (log/debug "Activity inserted successfully")
     result))
 
 (defn- update-activity-field
   [tx {:keys [date activity activity_type unit] :as row} field]
-  (log/debug "Atualizando campo de atividade" {:date date :activity activity :field field :amount (:amount row)})
+  (log/debug "Updating activity field" {:date date :activity activity :field field :amount (:amount row)})
   (let [payload {:date (ensure-local-date date)
                  :activity activity
                  :activity_type activity_type
@@ -55,7 +55,7 @@
         values {field (:amount row)
                 :updated_at (now)}
         result (sql/update! tx :activity values payload)]
-    (log/debug "Campo de atividade atualizado" {:rows-affected (first result)})
+    (log/debug "Activity field updated" {:rows-affected (first result)})
     result))
 
 (defn- upsert-planned-tx!
@@ -84,39 +84,39 @@
   [ds rows]
   (let [start-time (System/currentTimeMillis)
         rows-count (count rows)]
-    (log/info "Iniciando importação de atividades planejadas" {:rows-count rows-count})
+    (log/info "Starting planned activities import" {:rows-count rows-count})
     (try
       (jdbc/with-transaction [tx ds]
         (doseq [row rows]
           (upsert-planned-tx! tx row)))
       (let [duration (- (System/currentTimeMillis) start-time)]
-        (log/info "Importação de atividades planejadas concluída" {:rows-count rows-count :duration-ms duration}))
+        (log/info "Planned activities import completed" {:rows-count rows-count :duration-ms duration}))
       (catch Exception e
         (let [duration (- (System/currentTimeMillis) start-time)]
-          (log/error e "Erro ao importar atividades planejadas" {:rows-count rows-count :duration-ms duration})
+          (log/error e "Error importing planned activities" {:rows-count rows-count :duration-ms duration})
           (throw e))))))
 
 (defn import-executed-batch!
   [ds rows]
   (let [start-time (System/currentTimeMillis)
         rows-count (count rows)]
-    (log/info "Iniciando importação de atividades executadas" {:rows-count rows-count})
+    (log/info "Starting executed activities import" {:rows-count rows-count})
     (try
       (jdbc/with-transaction [tx ds]
         (doseq [row rows]
           (upsert-executed-tx! tx row)))
       (let [duration (- (System/currentTimeMillis) start-time)]
-        (log/info "Importação de atividades executadas concluída" {:rows-count rows-count :duration-ms duration}))
+        (log/info "Executed activities import completed" {:rows-count rows-count :duration-ms duration}))
       (catch Exception e
         (let [duration (- (System/currentTimeMillis) start-time)]
-          (log/error e "Erro ao importar atividades executadas" {:rows-count rows-count :duration-ms duration})
+          (log/error e "Error importing executed activities" {:rows-count rows-count :duration-ms duration})
           (throw e))))))
 
 (defn query-activities-raw
   [ds {:keys [date activity activity_type]}]
   (let [start-time (System/currentTimeMillis)
         filters {:date date :activity activity :activity_type activity_type}]
-    (log/info "Executando query de atividades" {:filters filters})
+    (log/info "Executing activities query" {:filters filters})
     (try
       (let [base-sql (str
                       "select activity, activity_type, unit, "
@@ -135,7 +135,7 @@
                                          unit-key (or (:unit row) (:activity/unit row))
                                          amount-planned (or (:amount_planned row) (:activity/amount_planned row))
                                          amount-executed (or (:amount_executed row) (:activity/amount_executed row))]
-                                     (log/debug "Normalizando registro" {:row row
+                                     (log/debug "Normalizing record" {:row row
                                                                          :row-keys (keys row)
                                                                          :amount_planned amount-planned
                                                                          :amount_executed amount-executed
@@ -149,9 +149,9 @@
                                  rows)
             duration (- (System/currentTimeMillis) start-time)
             sample-row (when (seq normalized-rows) (first normalized-rows))]
-        (log/info "Query de atividades concluída" {:filters filters :rows-count (count normalized-rows) :duration-ms duration})
+        (log/info "Activities query completed" {:filters filters :rows-count (count normalized-rows) :duration-ms duration})
         (when sample-row
-          (log/debug "Exemplo de registro retornado" {:sample-row sample-row
+          (log/debug "Sample record returned" {:sample-row sample-row
                                                       :keys (keys sample-row)
                                                       :amount_planned (:amount_planned sample-row)
                                                       :amount_executed (:amount_executed sample-row)
@@ -160,5 +160,5 @@
         normalized-rows)
       (catch Exception e
         (let [duration (- (System/currentTimeMillis) start-time)]
-          (log/error e "Erro ao executar query de atividades" {:filters filters :duration-ms duration})
+          (log/error e "Error executing activities query" {:filters filters :duration-ms duration})
           (throw e))))))

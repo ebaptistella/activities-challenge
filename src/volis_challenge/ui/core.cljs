@@ -65,34 +65,34 @@
                              (.catch (fn [error]
                                       (swap! app-state assoc
                                              :activities-loading false
-                                             :activities-error (str "Erro ao processar JSON: " (or (.-message error) "Resposta inválida"))))))
+                                             :activities-error (str "Error processing JSON: " (or (.-message error) "Invalid response"))))))
                          (-> (.text response)
                              (.then (fn [_]
                                       (swap! app-state assoc
                                              :activities-loading false
-                                             :activities-error (str "Resposta não é JSON. Status: " (.-status response)))))))
+                                             :activities-error (str "Response is not JSON. Status: " (.-status response)))))))
                        (if is-json
                          (-> (.json response)
                              (.then (fn [data]
                                       (swap! app-state assoc
                                              :activities-loading false
-                                             :activities-error (or (.-error data) "Erro ao buscar atividades"))))
+                                             :activities-error (or (.-error data) "Error fetching activities"))))
                              (.catch (fn [_]
                                       (swap! app-state assoc
                                              :activities-loading false
-                                             :activities-error (str "Erro HTTP " (.-status response))))))
+                                             :activities-error (str "HTTP Error " (.-status response))))))
                          (-> (.text response)
                              (.then (fn [text]
                                       (swap! app-state assoc
                                              :activities-loading false
-                                             :activities-error (str "Erro HTTP " (.-status response) ": " (subs text 0 (min 100 (count text))))))))))
+                                             :activities-error (str "HTTP Error " (.-status response) ": " (subs text 0 (min 100 (count text))))))))))
                      (swap! app-state assoc
                             :activities-loading false
-                            :activities-error "Erro de conexão")))))
+                            :activities-error "Connection error")))))
         (.catch (fn [error]
                  (swap! app-state assoc
                         :activities-loading false
-                        :activities-error (str "Erro ao buscar atividades: " (or (.-message error) "Erro desconhecido"))))))))
+                        :activities-error (str "Error fetching activities: " (or (.-message error) "Unknown error"))))))))
 
 (defn handle-upload-success
   [data]
@@ -119,16 +119,16 @@
       (.then (fn [data]
                (if (and (>= status 200) (< status 300))
                  (handle-upload-success data)
-                 (handle-upload-error (or (.-error data) (str "Erro HTTP " status))))))
-      (.catch #(handle-upload-error (str "Erro ao processar JSON: " (or (.-message %) "Resposta inválida"))))))
+                 (handle-upload-error (or (.-error data) (str "HTTP Error " status))))))
+      (.catch #(handle-upload-error (str "Error processing JSON: " (or (.-message %) "Invalid response"))))))
 
 (defn process-text-response
   [response status]
   (-> (.text response)
       (.then (fn [text]
                (if (and (>= status 200) (< status 300))
-                 (handle-upload-error (str "Resposta não é JSON. Status: " status ". Resposta: " (subs text 0 (min 200 (count text)))))
-                 (handle-upload-error (str "Erro HTTP " status ": " (subs text 0 (min 200 (count text))))))))))
+                 (handle-upload-error (str "Response is not JSON. Status: " status ". Response: " (subs text 0 (min 200 (count text)))))
+                 (handle-upload-error (str "HTTP Error " status ": " (subs text 0 (min 200 (count text))))))))))
 
 (defn process-upload-response
   [response]
@@ -140,7 +140,7 @@
       (if is-json
         (process-json-response response status)
         (process-text-response response status))
-      (handle-upload-error "Erro de conexão"))))
+      (handle-upload-error "Connection error"))))
 
 (defn upload-csv!
   [file]
@@ -151,7 +151,7 @@
                   (clj->js {:method "POST"
                             :body form-data}))
         (.then process-upload-response)
-        (.catch #(handle-upload-error (str "Erro ao fazer upload: " (or (.-message %) "Erro desconhecido")))))))
+        (.catch #(handle-upload-error (str "Error uploading file: " (or (.-message %) "Unknown error")))))))
 
 (defn handle-file-select
   [event]
@@ -184,52 +184,52 @@
     (cond
       (:loading status)
       [:div.mt-5.p-4.rounded-lg.text-sm.bg-blue-50.text-blue-700.border.border-blue-200
-       "Enviando arquivo..."]
+       "Uploading file..."]
       (:success status)
       (let [type-name (case (:type status)
-                        :planned "Planejado"
-                        :executed "Executado"
-                        "Desconhecido")]
+                        :planned "Planned"
+                        :executed "Executed"
+                        "Unknown")]
         [:div.mt-5.p-4.rounded-lg.text-sm.bg-green-50.text-green-700.border.border-green-200
-         (str "Upload realizado com sucesso! Tipo detectado: " type-name
-              " | Válidos: " (:valid status)
-              " | Inválidos: " (:invalid status))])
+         (str "Upload completed successfully! Detected type: " type-name
+              " | Valid: " (:valid status)
+              " | Invalid: " (:invalid status))])
       (:error status)
       [:div.mt-5.p-4.rounded-lg.text-sm.bg-red-50.text-red-700.border.border-red-200
-       (str "Erro no upload: " (or (:message status) "Erro desconhecido"))])))
+       (str "Upload error: " (or (:message status) "Unknown error"))])))
 
 (defn render-filters
   []
   (let [filters (:filters @app-state)]
     [:div.grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-5.gap-5.items-end
      [:div.flex.flex-col.gap-2
-      [:label.font-semibold.text-gray-800.text-sm {:for "date-filter"} "Data:"]
+      [:label.font-semibold.text-gray-800.text-sm {:for "date-filter"} "Date:"]
       [:input#date-filter.p-3.border-2.border-gray-300.rounded-md.text-base.transition-colors.focus:outline-none.focus:border-indigo-500
        {:type "date"
         :value (:date filters)
         :on-change #(handle-filter-change :date %)}]]
      [:div.flex.flex-col.gap-2
-      [:label.font-semibold.text-gray-800.text-sm {:for "activity-filter"} "Atividade:"]
+      [:label.font-semibold.text-gray-800.text-sm {:for "activity-filter"} "Activity:"]
       [:input#activity-filter.p-3.border-2.border-gray-300.rounded-md.text-base.transition-colors.focus:outline-none.focus:border-indigo-500
        {:type "text"
-        :placeholder "Filtrar por atividade"
+        :placeholder "Filter by activity"
         :value (:activity filters)
         :on-input #(update-filter! :activity (-> % .-target .-value))}]]
      [:div.flex.flex-col.gap-2
-      [:label.font-semibold.text-gray-800.text-sm {:for "activity-type-filter"} "Tipo de Atividade:"]
+      [:label.font-semibold.text-gray-800.text-sm {:for "activity-type-filter"} "Activity Type:"]
       [:input#activity-type-filter.p-3.border-2.border-gray-300.rounded-md.text-base.transition-colors.focus:outline-none.focus:border-indigo-500
        {:type "text"
-        :placeholder "Filtrar por tipo"
+        :placeholder "Filter by type"
         :value (:activity-type filters)
         :on-input #(update-filter! :activity-type (-> % .-target .-value))}]]
      [:div.flex.flex-col.gap-2
       [:button#apply-filters-btn.p-3.px-6.border-none.rounded-md.text-base.font-semibold.cursor-pointer.transition-all.bg-gradient-to-r.from-indigo-500.to-purple-600.text-white.hover:-translate-y-0.5.hover:shadow-lg.active:translate-y-0
        {:on-click handle-apply-filters}
-       "Aplicar Filtros"]]
+       "Apply Filters"]]
      [:div.flex.flex-col.gap-2
       [:button#clear-filters-btn.p-3.px-6.border-2.border-gray-300.rounded-md.text-base.font-semibold.cursor-pointer.transition-all.bg-white.text-gray-700.hover:bg-gray-50.hover:border-gray-400.active:bg-gray-100
        {:on-click clear-filters!}
-       "Limpar Filtros"]]]))
+       "Clear Filters"]]]))
 
 (defn render-upload
   []
@@ -241,8 +241,8 @@
         [:path {:d "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"}]
         [:polyline {:points "17 8 12 3 7 8"}]
         [:line {:x1 12 :y1 3 :x2 12 :y2 15}]]
-       [:span.text-xl.font-semibold.text-gray-800 "Clique para fazer upload de CSV"]
-       [:small.text-sm.text-gray-600 "Arquivos planned ou executed são aceitos"]]
+       [:span.text-xl.font-semibold.text-gray-800 "Click to upload CSV file"]
+       [:small.text-sm.text-gray-600 "Planned or executed files are accepted"]]
       [:input#csv-upload.hidden {:type "file" :accept ".csv" :on-change handle-file-select}]]
      (upload-status-message status)]))
 
@@ -250,9 +250,9 @@
   [kind]
   (let [kind-str (if (keyword? kind) (name kind) kind)
         kind-label (case kind-str
-                     "planned" "Planejado"
-                     "executed" "Executado"
-                     "both" "Ambos"
+                     "planned" "Planned"
+                     "executed" "Executed"
+                     "both" "Both"
                      kind-str)
         kind-class (case kind-str
                      "planned" "bg-blue-100 text-blue-800"
@@ -271,24 +271,24 @@
       loading
       [:div.text-center.py-10
        [:div.inline-block.animate-spin.rounded-full.h-8.w-8.border-b-2.border-indigo-500]
-       [:p.mt-4.text-gray-600 "Carregando atividades..."]]
+       [:p.mt-4.text-gray-600 "Loading activities..."]]
       error
       [:div.p-4.rounded-lg.bg-red-50.text-red-700.border.border-red-200
-       [:p.font-semibold "Erro ao carregar atividades"]
+       [:p.font-semibold "Error loading activities"]
        [:p.text-sm error]]
       (empty? activities)
       [:div.text-center.py-10.text-gray-500
-       "Nenhuma atividade encontrada"]
+       "No activities found"]
       :else
       [:div.overflow-x-auto.rounded-lg.border.border-gray-200
        [:table.min-w-full.divide-y.divide-gray-200
         [:thead.bg-gray-50
          [:tr
-          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Atividade"]
-          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Tipo de Atividade"]
-          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Unidade"]
-          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Quantidade"]
-          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Tipo"]]]
+          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Activity"]
+          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Activity Type"]
+          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Unit"]
+          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Amount"]
+          [:th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase.tracking-wider "Type"]]]
         [:tbody.bg-white.divide-y.divide-gray-200
          (for [activity activities]
            ^{:key (str (:activity activity) "-" (:activity_type activity) "-" (:kind activity))}
@@ -305,16 +305,16 @@
   [:div.max-w-6xl.mx-auto.bg-white.rounded-xl.shadow-2xl.overflow-hidden
    [:header.bg-gradient-to-r.from-indigo-500.to-purple-600.text-white.p-8.text-center
     [:h1.text-4xl.md:text-5xl.mb-2.5 "Volis Challenge"]
-    [:p.text-lg.opacity-90 "Gerenciamento de Atividades Planejadas e Executadas"]]
+    [:p.text-lg.opacity-90 "Planned and Executed Activities Management"]]
    [:main.p-8.md:p-8
     [:section.mb-10.upload-section
-     [:h2.text-2xl.mb-5.text-gray-800 "Upload de Arquivos CSV"]
+     [:h2.text-2xl.mb-5.text-gray-800 "CSV File Upload"]
      [render-upload]]
     [:section.mb-10.filters-section
-     [:h2.text-2xl.mb-5.text-gray-800 "Filtros"]
+     [:h2.text-2xl.mb-5.text-gray-800 "Filters"]
      [render-filters]]
     [:section.mb-10.activities-section
-     [:h2.text-2xl.mb-5.text-gray-800 "Atividades"]
+     [:h2.text-2xl.mb-5.text-gray-800 "Activities"]
      [activities-table]]]])
 
 (defn mount-root

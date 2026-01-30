@@ -25,11 +25,11 @@
 (defn import-handler
   [ds request]
   (let [start-time (System/currentTimeMillis)
-        ;; Tenta buscar o arquivo em :params ou :multipart-params
+        ;; Try to get the file from :params or :multipart-params
         file (or (get-in request [:params "file"])
                  (get-in request [:multipart-params "file"]))
         tempfile (:tempfile file)]
-    (log/info "Iniciando import-handler" {:has-params (some? (:params request))
+    (log/info "Starting import-handler" {:has-params (some? (:params request))
                                          :params-keys (keys (:params request))
                                          :has-multipart-params (some? (:multipart-params request))
                                          :multipart-params-keys (keys (:multipart-params request))
@@ -39,46 +39,46 @@
                                          :content-type (get-in request [:headers "content-type"])})
     (if (nil? tempfile)
       (do
-        (log/warn "Arquivo CSV não enviado na requisição" {:params (:params request)
+        (log/warn "CSV file not sent in request" {:params (:params request)
                                                            :headers (:headers request)
                                                            :content-type (get-in request [:headers "content-type"])})
         {:status 400
          :headers {"Content-Type" "application/json"}
-         :body (json/write-str {:error "Arquivo CSV nao enviado"})})
+         :body (json/write-str {:error "CSV file not sent"})})
       (try
-        (log/info "Processando arquivo CSV para importação")
+        (log/info "Processing CSV file for import")
         (with-open [r (io/reader tempfile)]
           (let [parsed (csv/parse-csv-reader r)
                 {:keys [type rows errors]} parsed
                 total-lines (+ (count rows) (count errors))]
-            (log/info "CSV parseado" {:type type :total-lines total-lines :valid (count rows) :invalid (count errors)})
-            (log/info "Iniciando importação no banco de dados" {:type type :rows-count (count rows)})
+            (log/info "CSV parsed" {:type type :total-lines total-lines :valid (count rows) :invalid (count errors)})
+            (log/info "Starting database import" {:type type :rows-count (count rows)})
             (let [import-start-time (System/currentTimeMillis)]
               (case type
                 :planned (db/import-planned-batch! ds rows)
                 :executed (db/import-executed-batch! ds rows))
               (let [import-duration (- (System/currentTimeMillis) import-start-time)]
-                (log/info "Importação concluída" {:type type :rows-count (count rows) :duration-ms import-duration})))
+                (log/info "Import completed" {:type type :rows-count (count rows) :duration-ms import-duration})))
             (let [response-time (- (System/currentTimeMillis) start-time)
                   summary (import-summary parsed)]
-              (log/info "Import-handler concluído com sucesso" {:response-time-ms response-time :summary summary})
+              (log/info "Import-handler completed successfully" {:response-time-ms response-time :summary summary})
               {:status 200
                :headers {"Content-Type" "application/json"}
                :body (json/write-str summary)})))
         (catch clojure.lang.ExceptionInfo e
           (let [data (ex-data e)
                 response-time (- (System/currentTimeMillis) start-time)]
-            (log/error e "Erro ao processar importação" {:response-time-ms response-time :error-data data})
+            (log/error e "Error processing import" {:response-time-ms response-time :error-data data})
             {:status 400
              :headers {"Content-Type" "application/json"}
              :body (json/write-str {:error (.getMessage e)
                                     :details data})}))
         (catch Exception e
           (let [response-time (- (System/currentTimeMillis) start-time)]
-            (log/error e "Erro inesperado ao processar importação" {:response-time-ms response-time})
+            (log/error e "Unexpected error processing import" {:response-time-ms response-time})
             {:status 500
              :headers {"Content-Type" "application/json"}
-             :body (json/write-str {:error "Erro interno do servidor"})}))))))
+             :body (json/write-str {:error "Internal server error"})}))))))
 
 (defn activities-handler
   [ds request]
@@ -89,15 +89,15 @@
         activity-type (get query-params "activity_type")
         type (get query-params "type")
         filters {:date date :activity activity :activity_type activity-type :type type}]
-    (log/info "Iniciando activities-handler" {:filters filters})
+    (log/info "Starting activities-handler" {:filters filters})
     (if (or (nil? date) (empty? (str date)))
       (do
-        (log/warn "Parâmetro 'date' não fornecido na requisição")
+        (log/warn "Parameter 'date' not provided in request")
         {:status 400
          :headers {"Content-Type" "application/json"}
-         :body (json/write-str {:error "Parametro 'date' e obrigatorio"})})
+         :body (json/write-str {:error "Parameter 'date' is required"})})
       (try
-        (log/info "Executando query de atividades" {:filters filters})
+        (log/info "Executing activities query" {:filters filters})
         (let [result (domain/plano-x-realizado ds {:date (str date)
                                                    :activity activity
                                                    :activity_type activity-type
@@ -105,20 +105,20 @@
               response-time (- (System/currentTimeMillis) start-time)
               items-count (count (:items result))
               sample-item (when (pos? items-count) (first (:items result)))]
-          (log/info "Activities-handler concluído com sucesso" {:response-time-ms response-time 
+          (log/info "Activities-handler completed successfully" {:response-time-ms response-time 
                                                                :items-count items-count
                                                                :sample-item sample-item
                                                                :result-keys (keys result)})
-          (log/debug "Resultado completo" {:result result})
+          (log/debug "Complete result" {:result result})
           {:status 200
            :headers {"Content-Type" "application/json"}
            :body (json/write-str result)})
         (catch Exception e
           (let [response-time (- (System/currentTimeMillis) start-time)]
-            (log/error e "Erro ao processar activities-handler" {:response-time-ms response-time :filters filters})
+            (log/error e "Error processing activities-handler" {:response-time-ms response-time :filters filters})
             {:status 500
              :headers {"Content-Type" "application/json"}
-             :body (json/write-str {:error "Erro interno do servidor"})}))))))
+             :body (json/write-str {:error "Internal server error"})}))))))
 
 (defn static-file-handler
   [request]

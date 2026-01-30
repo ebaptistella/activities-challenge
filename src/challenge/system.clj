@@ -36,12 +36,12 @@
 (defrecord ConfigComponent []
   component/Lifecycle
   (start [this]
-    (log/info "Iniciando ConfigComponent")
+    (log/info "Starting ConfigComponent")
     (let [cfg (config/load-config)]
-      (log/info "ConfigComponent iniciado com sucesso")
+      (log/info "ConfigComponent started successfully")
       (assoc this :value cfg)))
   (stop [this]
-    (log/info "Parando ConfigComponent")
+    (log/info "Stopping ConfigComponent")
     (dissoc this :value)))
 
 (defn config-component []
@@ -50,19 +50,19 @@
 (defrecord DatabaseComponent [config]
   component/Lifecycle
   (start [this]
-    (log/info "Iniciando DatabaseComponent")
+    (log/info "Starting DatabaseComponent")
     (let [cfg (:value config)
           spec (jdbc-spec-from-config cfg)]
-      (log/info "Conectando ao banco de dados" {:dbname (:dbname spec) :host (:host spec) :port (:port spec)})
+      (log/info "Connecting to database" {:dbname (:dbname spec) :host (:host spec) :port (:port spec)})
       (try
         (let [datasource (jdbc/get-datasource spec)]
-          (log/info "DatabaseComponent iniciado com sucesso" {:dbname (:dbname spec)})
+          (log/info "DatabaseComponent started successfully" {:dbname (:dbname spec)})
           (assoc this :datasource datasource))
         (catch Exception e
-          (log/error e "Erro ao conectar ao banco de dados" {:dbname (:dbname spec) :host (:host spec)})
+          (log/error e "Error connecting to database" {:dbname (:dbname spec) :host (:host spec)})
           (throw e)))))
   (stop [this]
-    (log/info "Parando DatabaseComponent")
+    (log/info "Stopping DatabaseComponent")
     (dissoc this :datasource)))
 
 (defn database-component []
@@ -71,24 +71,24 @@
 (defrecord MigrationComponent [config database]
   component/Lifecycle
   (start [this]
-    (log/info "Iniciando MigrationComponent")
+    (log/info "Starting MigrationComponent")
     (let [cfg (:value config)
           uri (connection-uri-from-config cfg)
           migratus-config {:store :database
                            :migration-dir "migrations"
                            :db {:connection-uri uri}}
           start-time (System/currentTimeMillis)]
-      (log/info "Executando migrations")
+      (log/info "Running migrations")
       (try
         (migratus/migrate migratus-config)
         (let [duration (- (System/currentTimeMillis) start-time)]
-          (log/info "Migrations executadas com sucesso" {:duration-ms duration}))
+          (log/info "Migrations completed successfully" {:duration-ms duration}))
         (catch Exception e
-          (log/error e "Erro ao executar migrations")
+          (log/error e "Error running migrations")
           (throw e)))
       (assoc this :migratus-config migratus-config)))
   (stop [this]
-    (log/info "Parando MigrationComponent")
+    (log/info "Stopping MigrationComponent")
     this))
 
 (defn migration-component []
@@ -97,18 +97,18 @@
 (defrecord RouterComponent [database]
   component/Lifecycle
   (start [this]
-    (log/info "Iniciando RouterComponent")
+    (log/info "Starting RouterComponent")
     (try
       (let [ds (:datasource database)
             router (api/create-router ds)
             handler (api/create-handler router)]
-        (log/info "RouterComponent iniciado com sucesso")
+        (log/info "RouterComponent started successfully")
         (assoc this :router router :handler handler))
       (catch Exception e
-        (log/error e "Erro ao criar router")
+        (log/error e "Error creating router")
         (throw e))))
   (stop [this]
-    (log/info "Parando RouterComponent")
+    (log/info "Stopping RouterComponent")
     (dissoc this :router :handler)))
 
 (defn router-component []
@@ -117,22 +117,22 @@
 (defrecord HttpServerComponent [config router]
   component/Lifecycle
   (start [this]
-    (log/info "Iniciando HttpServerComponent")
+    (log/info "Starting HttpServerComponent")
     (let [cfg (:value config)
           port (http-port-from-config cfg)]
-      (log/info "Iniciando servidor HTTP" {:port port})
+      (log/info "Starting HTTP server" {:port port})
       (try
         (let [handler (:handler router)
               server (jetty/run-jetty handler {:port port :join? false})]
-          (log/info "Servidor HTTP iniciado com sucesso" {:port port})
+          (log/info "HTTP server started successfully" {:port port})
           (assoc this :server server))
         (catch Exception e
-          (log/error e "Erro ao iniciar servidor HTTP" {:port port})
+          (log/error e "Error starting HTTP server" {:port port})
           (throw e)))))
   (stop [this]
-    (log/info "Parando HttpServerComponent")
+    (log/info "Stopping HttpServerComponent")
     (when-let [server (:server this)]
-      (log/info "Parando servidor HTTP")
+      (log/info "Stopping HTTP server")
       (.stop server))
     (dissoc this :server)))
 
