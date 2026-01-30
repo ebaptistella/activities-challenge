@@ -1,13 +1,10 @@
-(ns challenge.csv
+(ns challenge.api.csv
   "CSV parsing and validation logic."
-  (:require
-   [clojure.data.csv :as csv]
-   [clojure.java.io :as io]
-   [clojure.string :as string]
-   [clojure.tools.logging :as log])
-  (:import
-   (java.io Reader)
-   (java.time LocalDate)))
+  (:require [clojure.data.csv :as csv]
+            [clojure.string :as string]
+            [clojure.tools.logging :as log])
+  (:import (java.io Reader)
+           (java.time LocalDate)))
 
 (defn detect-type-from-header
   "Detects CSV type (planned or executed) from header row.
@@ -137,26 +134,3 @@
         (let [duration (- (System/currentTimeMillis) start-time)]
           (log/error e "Error parsing CSV" {:duration-ms duration})
           (throw e))))))
-
-(defn parse-csv-file
-  "Parses CSV from a file path.
-  
-  Parameters:
-  - path: String with file path
-  
-  Returns:
-  - Map with :type, :rows, :errors
-  
-  Throws:
-  - Exception if file cannot be read or parsed"
-  [path]
-  (log/info "Starting CSV file parse" {:path path})
-  (try
-    (let [result (with-open [r (io/reader path)]
-                   (parse-csv-reader r))]
-      (log/info "CSV file parse completed" {:path path :type (:type result)})
-      result)
-    (catch Exception e
-      (log/error e "Error parsing CSV file" {:path path})
-      (throw e))))
-

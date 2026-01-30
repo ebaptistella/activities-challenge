@@ -1,7 +1,7 @@
-(ns challenge.core
+(ns challenge.api.core
   (:gen-class)
   (:require [com.stuartsierra.component :as component]
-            [challenge.system :as system]))
+            [challenge.api.system :as system]))
 
 (defonce app-system (atom nil))
 

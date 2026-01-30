@@ -1,10 +1,9 @@
-(ns challenge.domain
+(ns challenge.api.domain
   "Domain layer for orchestrating business operations."
-  (:require
-   [challenge.db :as db]
-   [challenge.logic :as logic]
-   [challenge.models :as models]
-   [clojure.tools.logging :as log]))
+  (:require [challenge.api.db :as db]
+            [challenge.api.logic :as logic]
+            [challenge.api.models :as models]
+            [clojure.tools.logging :as log]))
 
 (defn query-activities
   "Queries and enriches activities from database.

@@ -1,4 +1,4 @@
-(ns challenge.logic
+(ns challenge.api.logic
   "Pure business logic functions.")
 
 (defn calculate-kind
@@ -62,6 +62,7 @@
   
   Parameters:
   - activities: Vector of activity maps
+  - type-filter: String \"planned\", \"executed\", or nil
   
   Returns:
   - Vector of enriched activities with valid kind"

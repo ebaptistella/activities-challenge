@@ -39,7 +39,7 @@
   :migratus {:store :database
              :migration-dir "resources/migrations"
              :db {:connection-uri (System/getenv "DATABASE_URL")}}
-  :main ^:skip-aot challenge.core
+  :main ^:skip-aot challenge.api.core
   :target-path "target/%s"
   :aliases {"lint" ["shell" "clj-kondo" "--lint" "src" "--parallel"]
             "lint-fix" ["shell" "clj-kondo" "--copy-configs" "--lint" "src" "--parallel"]

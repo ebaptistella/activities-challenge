@@ -1,19 +1,18 @@
-(ns challenge.diplomat.http-server
+(ns challenge.api.http-server
   "HTTP server handlers (diplomat layer for external communication)."
-  (:require
-   [clojure.data.json :as json]
-   [clojure.java.io :as io]
-   [ring.middleware.multipart-params :as multipart]
-   [ring.middleware.params :as params]
-   [ring.util.response :as response]
-   [reitit.ring :as reitit.ring]
-   [challenge.adapters :as adapters]
-   [challenge.logic :as logic]
-   [challenge.models :as models]
-   [challenge.csv :as csv]
-   [challenge.db :as db]
-   [challenge.domain :as domain]
-   [clojure.tools.logging :as log]))
+  (:require [clojure.data.json :as json]
+            [clojure.java.io :as io]
+            [ring.middleware.multipart-params :as multipart]
+            [ring.middleware.params :as params]
+            [ring.util.response :as response]
+            [reitit.ring :as reitit.ring]
+            [challenge.api.adapters :as adapters]
+            [challenge.api.logic :as logic]
+            [challenge.api.models :as models]
+            [challenge.api.csv :as csv]
+            [challenge.api.db :as db]
+            [challenge.api.domain :as domain]
+            [clojure.tools.logging :as log]))
 
 (defn extract-file-from-request
   "Extracts file from request (tries both :params and :multipart-params).

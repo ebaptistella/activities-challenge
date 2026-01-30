@@ -1,13 +1,9 @@
-(ns challenge.db
+(ns challenge.api.db
   "Database operations and data access layer."
-  (:require
-   [next.jdbc :as jdbc]
-   [next.jdbc.sql :as sql]
-   [clojure.string :as str]
-   [clojure.tools.logging :as log]))
-
-(def activity-key-columns
-  [:date :activity :activity_type :unit])
+  (:require [next.jdbc :as jdbc]
+            [next.jdbc.sql :as sql]
+            [clojure.string :as str]
+            [clojure.tools.logging :as log]))
 
 (defn- now []
   (java.time.OffsetDateTime/now))
@@ -70,32 +66,6 @@
   (if (find-activity tx row)
     (update-activity-field tx row :amount_executed)
     (insert-activity tx (assoc row :amount_executed (:amount row)))))
-
-(defn upsert-planned!
-  "Upserts a planned activity row.
-  
-  Parameters:
-  - ds: Database datasource
-  - row: Map with activity data including :date, :activity, :activity_type, :unit, :amount
-  
-  Returns:
-  - Result of database operation"
-  [ds row]
-  (jdbc/with-transaction [tx ds]
-    (upsert-planned-tx! tx row)))
-
-(defn upsert-executed!
-  "Upserts an executed activity row.
-  
-  Parameters:
-  - ds: Database datasource
-  - row: Map with activity data including :date, :activity, :activity_type, :unit, :amount
-  
-  Returns:
-  - Result of database operation"
-  [ds row]
-  (jdbc/with-transaction [tx ds]
-    (upsert-executed-tx! tx row)))
 
 (defn import-planned-batch!
   "Imports a batch of planned activities.
