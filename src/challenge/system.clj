@@ -95,5 +95,5 @@
    :config (config-component)
    :database (component/using (database-component) [:config])
    :migrations (component/using (migration-component) [:config :database])
-   :http (component/using (http-server-component) [:config :database])))
+   :http (component/using (http-server-component) [:config :database :migrations])))
 
