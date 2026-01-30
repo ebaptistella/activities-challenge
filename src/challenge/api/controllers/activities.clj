@@ -1,9 +1,9 @@
 (ns challenge.api.controllers.activities
   "Controllers for orchestrating activities operations."
-  (:require [challenge.api.adapters :as adapters]
-            [challenge.api.diplomat.database :as database]
-            [challenge.api.logic :as logic]
-            [challenge.api.models :as models]
+  (:require [challenge.api.adapters.adapters :as adapters]
+            [challenge.api.infrastructure.database :as database]
+            [challenge.api.logic.logic :as logic]
+            [challenge.api.models.models :as models]
             [clojure.data.json :as json]
             [clojure.tools.logging :as log]))
 
@@ -29,8 +29,8 @@
          :body (json/write-str (models/error-response "Parameter 'date' is required"))})
       (try
         (let [raw-activities (database/query-activities-raw ds {:date (:date filters)
-                                                               :activity (:activity filters)
-                                                               :activity_type (:activity_type filters)})
+                                                                :activity (:activity filters)
+                                                                :activity_type (:activity_type filters)})
               _ (log/info "Raw activities received" {:count (count raw-activities)})
               enriched (logic/filter-activities-by-kind raw-activities (:type filters))
               result (models/activities-response enriched)

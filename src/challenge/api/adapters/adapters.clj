@@ -1,4 +1,4 @@
-(ns challenge.api.adapters
+(ns challenge.api.adapters.adapters
   "Adapters for data transformation between wire formats and models.")
 
 (defn db-row->activity

@@ -1,10 +1,10 @@
 (ns challenge.api.system
-  (:require [challenge.api.config :as config]
+  (:require [challenge.api.config.config :as config]
             [com.stuartsierra.component :as component]
             [migratus.core :as migratus]
             [next.jdbc :as jdbc]
             [ring.adapter.jetty :as jetty]
-            [challenge.api.diplomat.http-server :as http-server]
+            [challenge.api.infrastructure.http-server :as http-server]
             [clojure.tools.logging :as log]))
 
 (defn- jdbc-spec-from-config [cfg]

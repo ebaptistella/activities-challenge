@@ -1,10 +1,10 @@
 (ns challenge.api.controllers.import
   "Controllers for orchestrating CSV import operations."
-  (:require [challenge.api.adapters :as adapters]
-            [challenge.api.diplomat.csv :as csv]
-            [challenge.api.diplomat.database :as database]
-            [challenge.api.logic :as logic]
-            [challenge.api.models :as models]
+  (:require [challenge.api.adapters.adapters :as adapters]
+            [challenge.api.infrastructure.csv :as csv]
+            [challenge.api.infrastructure.database :as database]
+            [challenge.api.logic.logic :as logic]
+            [challenge.api.models.models :as models]
             [clojure.data.json :as json]
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]))

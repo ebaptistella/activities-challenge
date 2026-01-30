@@ -1,4 +1,4 @@
-(ns challenge.api.config
+(ns challenge.api.config.config
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]))
 

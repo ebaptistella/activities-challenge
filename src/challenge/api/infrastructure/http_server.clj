@@ -1,12 +1,13 @@
-(ns challenge.api.diplomat.http-server
+(ns challenge.api.infrastructure.http-server
   "HTTP server handlers (infrastructure layer for external communication)."
   (:require [clojure.data.json :as json]
             [ring.middleware.multipart-params :as multipart]
             [ring.middleware.params :as params]
             [ring.util.response :as response]
             [reitit.ring :as reitit.ring]
-            [challenge.api.controllers :as controllers]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [challenge.api.controllers.import :as controllers.import]
+            [challenge.api.controllers.activities :as controllers.activities]))
 
 (defn static-file-handler
   "Handles static file requests.
@@ -64,7 +65,7 @@
   (let [start-time (System/currentTimeMillis)]
     (log/info "Starting import-handler")
     (try
-      (let [result (controllers/import-csv! ds request)
+      (let [result (challenge.api.controllers.import/import-csv! ds request)
             response-time (- (System/currentTimeMillis) start-time)]
         (log/info "Import-handler completed" {:response-time-ms response-time})
         result)
@@ -88,7 +89,7 @@
   (let [start-time (System/currentTimeMillis)]
     (log/info "Starting activities-handler")
     (try
-      (let [result (controllers/query-activities! ds request)
+      (let [result (controllers.activities/query-activities! ds request)
             response-time (- (System/currentTimeMillis) start-time)]
         (log/info "Activities-handler completed" {:response-time-ms response-time})
         result)

@@ -1,4 +1,4 @@
-(ns challenge.api.models
+(ns challenge.api.models.models
   "Data models and domain entities.")
 
 (defn activities-response

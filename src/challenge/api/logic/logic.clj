@@ -1,4 +1,4 @@
-(ns challenge.api.logic
+(ns challenge.api.logic.logic
   "Pure business logic functions.")
 
 (defn calculate-kind

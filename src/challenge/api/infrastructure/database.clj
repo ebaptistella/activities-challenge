@@ -1,9 +1,9 @@
-(ns challenge.api.diplomat.database
+(ns challenge.api.infrastructure.database
   "Database operations (infrastructure layer for data persistence)."
   (:require [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
             [clojure.string :as str]
-            [challenge.api.adapters :as adapters]
+            [challenge.api.adapters.adapters :as adapters]
             [clojure.tools.logging :as log]))
 
 (defn- now []
