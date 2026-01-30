@@ -108,9 +108,12 @@
                   (println "Erro conhecido na migration (tabela já existe ou múltiplos resultados):" msg)
                   (println "Continuando..."))
                 (throw e)))))
-        (let [all-tables (jdbc/execute! ds ["SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename"])
-              activity-table (jdbc/execute! ds ["SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'activity'"])
-              schema-tables (jdbc/execute! ds ["SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'activity'"])]
+        (let [all-tables-result (jdbc/execute! ds ["SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename"])
+              all-tables (if (nil? all-tables-result) [] all-tables-result)
+              activity-table-result (jdbc/execute! ds ["SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'activity'"])
+              activity-table (if (nil? activity-table-result) [] activity-table-result)
+              schema-tables-result (jdbc/execute! ds ["SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'activity'"])
+              schema-tables (if (nil? schema-tables-result) [] schema-tables-result)]
           (println "Todas as tabelas no schema public:" (map :tablename all-tables))
           (if (or (seq activity-table) (seq schema-tables))
             (println "Tabela 'activity' confirmada no banco de dados")
