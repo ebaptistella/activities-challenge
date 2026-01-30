@@ -1,4 +1,4 @@
-CREATE TABLE activity (
+CREATE TABLE IF NOT EXISTS activity (
   id bigserial PRIMARY KEY,
   date date NOT NULL,
   activity text NOT NULL,
@@ -10,6 +10,6 @@ CREATE TABLE activity (
   updated_at timestamp with time zone DEFAULT now()
 );
 
-CREATE INDEX idx_activity_date ON activity (date);
-CREATE INDEX idx_activity_activity_type ON activity (activity_type);
+CREATE INDEX IF NOT EXISTS idx_activity_date ON activity (date);
+CREATE INDEX IF NOT EXISTS idx_activity_activity_type ON activity (activity_type);
 

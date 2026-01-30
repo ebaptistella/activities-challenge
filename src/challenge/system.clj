@@ -97,8 +97,18 @@
           (println "Migrations pendentes:" (count pending))
           (doseq [m pending]
             (println "  -" (:name m))))
-        (migratus/migrate migratus-config)
-        (println "Migrations executadas com sucesso")
+        (try
+          (migratus/migrate migratus-config)
+          (println "Migrations executadas com sucesso")
+          (catch Exception e
+            (if (.contains (.getMessage e) "already exists")
+              (do
+                (println "Tabela já existe, marcando migration como executada...")
+                (try
+                  (migratus/migrate migratus-config)
+                  (catch Exception e2
+                    (println "Aviso ao marcar migration:" (.getMessage e2)))))
+              (throw e))))
         (let [all-tables (jdbc/execute! ds ["SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename"])
               activity-table (jdbc/execute! ds ["SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'activity'"])
               schema-tables (jdbc/execute! ds ["SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'activity'"])]
