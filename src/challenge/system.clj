@@ -65,13 +65,20 @@
           uri (connection-uri-from-config cfg)
           migratus-config {:store :database
                            :migration-dir "resources/migrations"
-                           :db {:connection-uri uri}}]
+                           :db {:connection-uri uri}}
+          ds (:datasource database)]
       (println "Executando migrations...")
+      (println "URI de conexão:" uri)
       (try
         (migratus/migrate migratus-config)
         (println "Migrations executadas com sucesso")
+        (let [tables (jdbc/execute! ds ["SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'activity'"])]
+          (if (seq tables)
+            (println "Tabela 'activity' confirmada no banco de dados")
+            (println "AVISO: Tabela 'activity' não encontrada após migrations!")))
         (catch Exception e
           (println "Erro ao executar migrations:" (.getMessage e))
+          (.printStackTrace e)
           (throw e)))
       (assoc this :migratus-config migratus-config)))
   (stop [this]
