@@ -66,7 +66,13 @@
           migratus-config {:store :database
                            :migration-dir "resources/migrations"
                            :db {:connection-uri uri}}]
-      (migratus/migrate migratus-config)
+      (println "Executando migrations...")
+      (try
+        (migratus/migrate migratus-config)
+        (println "Migrations executadas com sucesso")
+        (catch Exception e
+          (println "Erro ao executar migrations:" (.getMessage e))
+          (throw e)))
       (assoc this :migratus-config migratus-config)))
   (stop [this]
     this))
