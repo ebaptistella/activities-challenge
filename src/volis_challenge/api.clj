@@ -103,8 +103,13 @@
                                                    :activity_type activity-type
                                                    :type type})
               response-time (- (System/currentTimeMillis) start-time)
-              items-count (count (:items result))]
-          (log/info "Activities-handler concluído com sucesso" {:response-time-ms response-time :items-count items-count})
+              items-count (count (:items result))
+              sample-item (when (pos? items-count) (first (:items result)))]
+          (log/info "Activities-handler concluído com sucesso" {:response-time-ms response-time 
+                                                               :items-count items-count
+                                                               :sample-item sample-item
+                                                               :result-keys (keys result)})
+          (log/debug "Resultado completo" {:result result})
           {:status 200
            :headers {"Content-Type" "application/json"}
            :body (json/write-str result)})

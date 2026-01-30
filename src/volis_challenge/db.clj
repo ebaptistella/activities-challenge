@@ -129,9 +129,35 @@
                            activity (conj activity)
                            activity_type (conj activity_type))
             rows (jdbc/execute! ds (into [base-sql] query-params))
-            duration (- (System/currentTimeMillis) start-time)]
-        (log/info "Query de atividades concluída" {:filters filters :rows-count (count rows) :duration-ms duration})
-        rows)
+            normalized-rows (map (fn [row]
+                                   (let [activity-key (or (:activity row) (:activity/activity row))
+                                         activity-type-key (or (:activity_type row) (:activity/activity_type row))
+                                         unit-key (or (:unit row) (:activity/unit row))
+                                         amount-planned (or (:amount_planned row) (:activity/amount_planned row))
+                                         amount-executed (or (:amount_executed row) (:activity/amount_executed row))]
+                                     (log/debug "Normalizando registro" {:row row
+                                                                         :row-keys (keys row)
+                                                                         :amount_planned amount-planned
+                                                                         :amount_executed amount-executed
+                                                                         :amount_planned-type (type amount-planned)
+                                                                         :amount_executed-type (type amount-executed)})
+                                     {:activity activity-key
+                                      :activity_type activity-type-key
+                                      :unit unit-key
+                                      :amount_planned amount-planned
+                                      :amount_executed amount-executed}))
+                                 rows)
+            duration (- (System/currentTimeMillis) start-time)
+            sample-row (when (seq normalized-rows) (first normalized-rows))]
+        (log/info "Query de atividades concluída" {:filters filters :rows-count (count normalized-rows) :duration-ms duration})
+        (when sample-row
+          (log/debug "Exemplo de registro retornado" {:sample-row sample-row
+                                                      :keys (keys sample-row)
+                                                      :amount_planned (:amount_planned sample-row)
+                                                      :amount_executed (:amount_executed sample-row)
+                                                      :amount_planned-type (type (:amount_planned sample-row))
+                                                      :amount_executed-type (type (:amount_executed sample-row))}))
+        normalized-rows)
       (catch Exception e
         (let [duration (- (System/currentTimeMillis) start-time)]
           (log/error e "Erro ao executar query de atividades" {:filters filters :duration-ms duration})
