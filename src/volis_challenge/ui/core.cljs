@@ -34,7 +34,9 @@
 (defn fetch-activities!
   []
   (let [filters (:filters @app-state)
-        date-param (or (:date filters) (today-date))
+        date-param (if (empty? (:date filters))
+                     (today-date)
+                     (:date filters))
         params (->> [["date" date-param]
                      (when (not (empty? (:activity filters)))
                        ["activity" (:activity filters)])

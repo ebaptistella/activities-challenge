@@ -51,7 +51,7 @@
         activity (get-in request [:query-params "activity"])
         activity-type (get-in request [:query-params "activity_type"])
         type (get-in request [:query-params "type"])]
-    (if (nil? date)
+    (if (or (nil? date) (empty? date))
       {:status 400
        :headers {"Content-Type" "application/json"}
        :body (json/write-str {:error "Parametro 'date' e obrigatorio"})}
