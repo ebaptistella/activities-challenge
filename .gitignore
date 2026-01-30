@@ -18,3 +18,4 @@ pom.xml.asc
 WORKFLOW.md
 resources/public/js/out
 logs/application.log
+resources/public/js/app.js

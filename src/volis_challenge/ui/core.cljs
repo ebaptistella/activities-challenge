@@ -34,9 +34,10 @@
 (defn fetch-activities!
   []
   (let [filters (:filters @app-state)
-        date-param (if (empty? (:date filters))
+        date-value (:date filters)
+        date-param (if (or (nil? date-value) (empty? (str date-value)))
                      (today-date)
-                     (:date filters))
+                     (str date-value))
         params (->> [["date" date-param]
                      (when (not (empty? (:activity filters)))
                        ["activity" (:activity filters)])
@@ -93,46 +94,64 @@
                         :activities-loading false
                         :activities-error (str "Erro ao buscar atividades: " (or (.-message error) "Erro desconhecido"))))))))
 
+(defn handle-upload-success
+  [data]
+  (swap! app-state assoc
+         :upload-status {:success true
+                         :type (keyword (.-type data))
+                         :valid (.-valid data)
+                         :invalid (.-invalid data)
+                         :loading false})
+  (fetch-activities!)
+  (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000))
+
+(defn handle-upload-error
+  [message]
+  (swap! app-state assoc
+         :upload-status {:error true
+                         :message message
+                         :loading false})
+  (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000))
+
+(defn process-json-response
+  [response status]
+  (-> (.json response)
+      (.then (fn [data]
+               (if (and (>= status 200) (< status 300))
+                 (handle-upload-success data)
+                 (handle-upload-error (or (.-error data) (str "Erro HTTP " status))))))
+      (.catch #(handle-upload-error (str "Erro ao processar JSON: " (or (.-message %) "Resposta inválida"))))))
+
+(defn process-text-response
+  [response status]
+  (-> (.text response)
+      (.then (fn [text]
+               (if (and (>= status 200) (< status 300))
+                 (handle-upload-error (str "Resposta não é JSON. Status: " status ". Resposta: " (subs text 0 (min 200 (count text)))))
+                 (handle-upload-error (str "Erro HTTP " status ": " (subs text 0 (min 200 (count text))))))))))
+
+(defn process-upload-response
+  [response]
+  (let [status (.-status response)
+        content-type (-> response .-headers (.get "content-type") (or ""))
+        is-json (or (.includes content-type "application/json")
+                    (.includes content-type "text/json"))]
+    (if (>= status 200)
+      (if is-json
+        (process-json-response response status)
+        (process-text-response response status))
+      (handle-upload-error "Erro de conexão"))))
+
 (defn upload-csv!
   [file]
   (let [form-data (js/FormData.)]
     (.append form-data "file" file)
     (swap! app-state assoc :upload-status {:loading true})
     (-> (js/fetch "/api/import"
-                  {:method "POST"
-                   :body form-data})
-        (.then (fn [response]
-                 (if (>= (.-status response) 200)
-                   (if (< (.-status response) 300)
-                     (-> (.json response)
-                         (.then (fn [data]
-                                  (swap! app-state assoc
-                                         :upload-status {:success true
-                                                         :type (keyword (.-type data))
-                                                         :valid (.-valid data)
-                                                         :invalid (.-invalid data)
-                                                         :loading false})
-                                  (fetch-activities!)
-                                  (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000))))
-                     (-> (.json response)
-                         (.then (fn [data]
-                                  (swap! app-state assoc
-                                         :upload-status {:error true
-                                                         :message (or (.-error data) "Erro ao fazer upload")
-                                                         :loading false})
-                                  (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000)))))
-                   (do
-                     (swap! app-state assoc
-                            :upload-status {:error true
-                                            :message "Erro de conexão"
-                                            :loading false})
-                     (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000)))))
-        (.catch (fn [error]
-                 (swap! app-state assoc
-                        :upload-status {:error true
-                                        :message (or (.-message error) "Erro desconhecido")
-                                        :loading false})
-                 (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000))))))
+                  (clj->js {:method "POST"
+                            :body form-data}))
+        (.then process-upload-response)
+        (.catch #(handle-upload-error (str "Erro ao fazer upload: " (or (.-message %) "Erro desconhecido")))))))
 
 (defn handle-file-select
   [event]
@@ -142,8 +161,9 @@
 
 (defn handle-filter-change
   [key event]
-  (let [value (-> event .-target .-value)]
-    (update-filter! key value)
+  (let [value (-> event .-target .-value)
+        date-value (if (= key :date) (str value) value)]
+    (update-filter! key date-value)
     (when (= key :date)
       (fetch-activities!))))
 
@@ -292,8 +312,9 @@
     (rdom/render [render-app] app-el)
     (let [filters (:filters @app-state)]
       (when (empty? (:date filters))
-        (update-filter! :date (today-date))
-        (fetch-activities!)))))
+        (let [today (today-date)]
+          (update-filter! :date today)
+          (fetch-activities!))))))
 
 (defn ^:export init
   []

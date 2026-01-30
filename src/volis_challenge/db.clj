@@ -2,6 +2,7 @@
   (:require
    [next.jdbc :as jdbc]
    [next.jdbc.sql :as sql]
+   [clojure.string :as str]
    [clojure.tools.logging :as log]))
 
 (def activity-key-columns
@@ -14,7 +15,13 @@
   (cond
     (instance? java.time.LocalDate v) v
     (instance? java.sql.Date v) (.toLocalDate ^java.sql.Date v)
-    :else (java.time.LocalDate/parse (str v))))
+    :else (try
+            (let [date-str (str/trim (str v))]
+              (log/debug "Convertendo data para LocalDate" {:input v :date-str date-str})
+              (java.time.LocalDate/parse date-str))
+            (catch Exception e
+              (log/error e "Erro ao converter data para LocalDate" {:input v :type (type v)})
+              (throw (ex-info (str "Data inválida: " v) {:date v :error (.getMessage e)}))))))
 
 (defn- find-activity
   [tx {:keys [date activity activity_type unit]}]

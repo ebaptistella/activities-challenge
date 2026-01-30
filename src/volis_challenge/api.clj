@@ -25,12 +25,23 @@
 (defn import-handler
   [ds request]
   (let [start-time (System/currentTimeMillis)
-        file (get-in request [:params "file"])
+        ;; Tenta buscar o arquivo em :params ou :multipart-params
+        file (or (get-in request [:params "file"])
+                 (get-in request [:multipart-params "file"]))
         tempfile (:tempfile file)]
-    (log/info "Iniciando import-handler")
+    (log/info "Iniciando import-handler" {:has-params (some? (:params request))
+                                         :params-keys (keys (:params request))
+                                         :has-multipart-params (some? (:multipart-params request))
+                                         :multipart-params-keys (keys (:multipart-params request))
+                                         :has-file (some? file)
+                                         :file-keys (when file (keys file))
+                                         :has-tempfile (some? tempfile)
+                                         :content-type (get-in request [:headers "content-type"])})
     (if (nil? tempfile)
       (do
-        (log/warn "Arquivo CSV não enviado na requisição")
+        (log/warn "Arquivo CSV não enviado na requisição" {:params (:params request)
+                                                           :headers (:headers request)
+                                                           :content-type (get-in request [:headers "content-type"])})
         {:status 400
          :headers {"Content-Type" "application/json"}
          :body (json/write-str {:error "Arquivo CSV nao enviado"})})
@@ -135,6 +146,6 @@
   [router]
   (let [reitit-handler (reitit.ring/ring-handler router static-file-handler)]
     (-> reitit-handler
-        params/wrap-params
-        multipart/wrap-multipart-params)))
+        multipart/wrap-multipart-params
+        params/wrap-params)))
 
