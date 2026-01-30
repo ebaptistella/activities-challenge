@@ -136,14 +136,14 @@
                  :activity_type "Type A"
                  :unit "kg"
                  :amount 100M
-                 :kind "both"}
+                 :kind "executed"}
           result (adapters/model->wire-response model)]
       (is (= model result))
       (is (= "Test Activity" (:activity result)))
       (is (= "Type A" (:activity_type result)))
       (is (= "kg" (:unit result)))
       (is (= 100M (:amount result)))
-      (is (= "both" (:kind result)))))
+      (is (= "executed" (:kind result)))))
 
   (testing "preserves all fields from model"
     (let [model {:activity "Another Activity"

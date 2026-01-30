@@ -78,13 +78,11 @@
 (deftest activity-type-label-test
   (testing "returns formatted label for keyword types"
     (is (= "Planned" (logic/activity-type-label :planned)))
-    (is (= "Executed" (logic/activity-type-label :executed)))
-    (is (= "Both" (logic/activity-type-label :both))))
+    (is (= "Executed" (logic/activity-type-label :executed))))
 
   (testing "returns formatted label for string types"
     (is (= "Planned" (logic/activity-type-label "planned")))
-    (is (= "Executed" (logic/activity-type-label "executed")))
-    (is (= "Both" (logic/activity-type-label "both"))))
+    (is (= "Executed" (logic/activity-type-label "executed"))))
 
   (testing "returns type as string for unknown types"
     (is (= "unknown" (logic/activity-type-label "unknown")))
@@ -97,13 +95,11 @@
 (deftest activity-type-class-test
   (testing "returns CSS classes for keyword types"
     (is (= "bg-blue-100 text-blue-800" (logic/activity-type-class :planned)))
-    (is (= "bg-green-100 text-green-800" (logic/activity-type-class :executed)))
-    (is (= "bg-purple-100 text-purple-800" (logic/activity-type-class :both))))
+    (is (= "bg-green-100 text-green-800" (logic/activity-type-class :executed))))
 
   (testing "returns CSS classes for string types"
     (is (= "bg-blue-100 text-blue-800" (logic/activity-type-class "planned")))
-    (is (= "bg-green-100 text-green-800" (logic/activity-type-class "executed")))
-    (is (= "bg-purple-100 text-purple-800" (logic/activity-type-class "both"))))
+    (is (= "bg-green-100 text-green-800" (logic/activity-type-class "executed"))))
 
   (testing "returns default classes for unknown types"
     (is (= "bg-gray-100 text-gray-800" (logic/activity-type-class "unknown")))

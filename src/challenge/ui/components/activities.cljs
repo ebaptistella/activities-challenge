@@ -34,12 +34,10 @@
         kind-label (case kind-str
                      "planned" "Planned"
                      "executed" "Executed"
-                     "both" "Both"
                      kind-str)
         kind-class (case kind-str
                      "planned" "bg-blue-100 text-blue-800"
                      "executed" "bg-green-100 text-green-800"
-                     "both" "bg-purple-100 text-purple-800"
                      "bg-gray-100 text-gray-800")]
     [:span.px-3.py-1.rounded-full.text-xs.font-semibold {:class kind-class}
      kind-label]))

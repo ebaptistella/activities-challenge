@@ -65,7 +65,6 @@
     (case type-str
       "planned" "Planned"
       "executed" "Executed"
-      "both" "Both"
       type-str)))
 
 (defn activity-type-class
@@ -81,7 +80,6 @@
     (case type-str
       "planned" "bg-blue-100 text-blue-800"
       "executed" "bg-green-100 text-green-800"
-      "both" "bg-purple-100 text-purple-800"
       "bg-gray-100 text-gray-800")))
 
 (defn default-filters

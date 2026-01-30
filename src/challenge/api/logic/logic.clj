@@ -9,12 +9,13 @@
   - amount-executed: BigDecimal or nil
   
   Returns:
-  - Keyword :both, :planned, :executed, or nil if both are nil"
+  - Keyword :executed (when both are present or only executed), :planned, or nil if both are nil
+  
+  Note: When both amounts are present, returns :executed (prioritizing executed over planned)"
   [amount-planned amount-executed]
   (cond
-    (and (some? amount-planned) (some? amount-executed)) :both
-    (some? amount-planned) :planned
     (some? amount-executed) :executed
+    (some? amount-planned) :planned
     :else nil))
 
 (defn select-relevant-amount
@@ -37,25 +38,40 @@
   "Enriches an activity row with calculated kind and selected amount.
   
   Parameters:
-  - activity-row: Map with :activity, :activity_type, :unit, :amount_planned, :amount_executed
+  - activity-row: Map with :date, :activity, :activity_type, :unit, :amount_planned, :amount_executed
   - type-filter: String \"planned\", \"executed\", or nil
   
   Returns:
-  - Map with enriched activity or nil if kind cannot be calculated"
+  - Map with enriched activity or nil if kind cannot be calculated or doesn't match filter"
   [activity-row type-filter]
-  (let [activity (:activity activity-row)
+  (let [date (:date activity-row)
+        activity (:activity activity-row)
         activity-type (:activity_type activity-row)
         unit (:unit activity-row)
         amount-planned (:amount_planned activity-row)
         amount-executed (:amount_executed activity-row)
-        kind (calculate-kind amount-planned amount-executed)
-        amount (select-relevant-amount amount-planned amount-executed type-filter)]
+        kind (calculate-kind amount-planned amount-executed)]
     (when kind
-      {:activity activity
-       :activity_type activity-type
-       :unit unit
-       :amount amount
-       :kind (name kind)})))
+      ;; Filter by type if specified
+      ;; When filter is "planned", include activities that have amount_planned
+      ;; When filter is "executed", include activities that have amount_executed
+      (let [kind-str (name kind)
+            matches-filter? (or (nil? type-filter)
+                               (and (= type-filter "planned") (some? amount-planned))
+                               (and (= type-filter "executed") (some? amount-executed))
+                               (= kind-str type-filter))]
+        (when matches-filter?
+          (let [amount (select-relevant-amount amount-planned amount-executed type-filter)
+                ;; When filtering by type, adjust kind to match the filter
+                adjusted-kind (if (and type-filter (some? amount-planned) (some? amount-executed))
+                               type-filter
+                               kind-str)]
+            {:date date
+             :activity activity
+             :activity_type activity-type
+             :unit unit
+             :amount amount
+             :kind adjusted-kind}))))))
 
 (defn filter-activities-by-kind
   "Filters activities that have a valid kind.

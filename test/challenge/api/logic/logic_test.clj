@@ -4,10 +4,10 @@
             [challenge.api.logic.logic :as logic]))
 
 (deftest calculate-kind-test
-  (testing "returns :both when both amounts are present"
-    (is (= :both (logic/calculate-kind 100M 50M)))
-    (is (= :both (logic/calculate-kind 0M 0M)))
-    (is (= :both (logic/calculate-kind 1.5M 2.3M))))
+  (testing "returns :executed when both amounts are present (prioritizes executed)"
+    (is (= :executed (logic/calculate-kind 100M 50M)))
+    (is (= :executed (logic/calculate-kind 0M 0M)))
+    (is (= :executed (logic/calculate-kind 1.5M 2.3M))))
 
   (testing "returns :planned when only planned amount is present"
     (is (= :planned (logic/calculate-kind 100M nil)))
@@ -47,7 +47,7 @@
     (is (nil? (logic/select-relevant-amount nil nil nil)))))
 
 (deftest enrich-activity-test
-  (testing "enriches activity with both amounts"
+  (testing "enriches activity with both amounts (returns executed kind)"
     (let [activity-row {:activity "Test Activity"
                         :activity_type "Type A"
                         :unit "kg"
@@ -58,7 +58,7 @@
       (is (= "Type A" (:activity_type result)))
       (is (= "kg" (:unit result)))
       (is (= 50M (:amount result)))
-      (is (= "both" (:kind result)))))
+      (is (= "executed" (:kind result)))))
 
   (testing "enriches activity with only planned amount"
     (let [activity-row {:activity "Planned Only"
@@ -90,8 +90,12 @@
                         :amount_executed 50M}
           result-planned (logic/enrich-activity activity-row "planned")
           result-executed (logic/enrich-activity activity-row "executed")]
+      (is (some? result-planned))
       (is (= 100M (:amount result-planned)))
-      (is (= 50M (:amount result-executed)))))
+      (is (= "planned" (:kind result-planned)))
+      (is (some? result-executed))
+      (is (= 50M (:amount result-executed)))
+      (is (= "executed" (:kind result-executed)))))
 
   (testing "returns nil when both amounts are nil"
     (let [activity-row {:activity "No Amounts"
@@ -110,17 +114,23 @@
                       {:activity "D" :amount_planned nil :amount_executed nil}]
           result (logic/filter-activities-by-kind activities nil)]
       (is (= 3 (count result)))
-      (is (= "both" (:kind (first result))))
+      (is (= "executed" (:kind (first result))))
       (is (= "planned" (:kind (second result))))
       (is (= "executed" (:kind (nth result 2))))))
 
   (testing "respects type-filter when filtering"
     (let [activities [{:activity "A" :amount_planned 100M :amount_executed 50M}
                       {:activity "B" :amount_planned 200M :amount_executed nil}]
-          result (logic/filter-activities-by-kind activities "planned")]
-      (is (= 2 (count result)))
-      (is (= 100M (:amount (first result))))
-      (is (= 200M (:amount (second result))))))
+          result-planned (logic/filter-activities-by-kind activities "planned")
+          result-executed (logic/filter-activities-by-kind activities "executed")]
+      (is (= 2 (count result-planned)))
+      (is (= "planned" (:kind (first result-planned))))
+      (is (= 100M (:amount (first result-planned))))
+      (is (= "planned" (:kind (second result-planned))))
+      (is (= 200M (:amount (second result-planned))))
+      (is (= 1 (count result-executed)))
+      (is (= "executed" (:kind (first result-executed))))
+      (is (= 50M (:amount (first result-executed))))))
 
   (testing "returns empty vector when all activities have no amounts"
     (let [activities [{:activity "A" :amount_planned nil :amount_executed nil}

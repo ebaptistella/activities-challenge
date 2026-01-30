@@ -14,6 +14,11 @@ RUN --mount=type=cache,target=/root/.m2/repository \
 
 COPY src/ ./src/
 COPY resources/ ./resources/
+COPY test/ ./test/
+
+RUN --mount=type=cache,target=/root/.m2/repository \
+    --mount=type=cache,target=/root/.lein \
+    lein test
 
 RUN --mount=type=cache,target=/root/.m2/repository \
     --mount=type=cache,target=/root/.lein \

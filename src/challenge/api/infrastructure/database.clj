@@ -131,7 +131,7 @@
     (log/info "Executing activities query" {:filters filters})
     (try
       (let [base-sql (str
-                      "select activity, activity_type, unit, "
+                      "select date, activity, activity_type, unit, "
                       "amount_planned, amount_executed "
                       "from activity "
                       "where date = ?"

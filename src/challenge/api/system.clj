@@ -138,11 +138,20 @@
 (defn http-server-component []
   (map->HttpServerComponent {}))
 
-(defn new-system []
-  (component/system-map
-   :config (config-component)
-   :database (component/using (database-component) [:config])
-   :migrations (component/using (migration-component) [:config :database])
-   :router (component/using (router-component) [:database])
-   :http (component/using (http-server-component) [:config :router])))
+(defn new-system
+  "Creates a new system with optional custom config component.
+  
+  Parameters:
+  - test-config-component: Optional ConfigComponent for testing (default: nil)
+  
+  Returns:
+  - Component system map"
+  ([] (new-system nil))
+  ([test-config-component]
+   (component/system-map
+    :config (or test-config-component (config-component))
+    :database (component/using (database-component) [:config])
+    :migrations (component/using (migration-component) [:config :database])
+    :router (component/using (router-component) [:database])
+    :http (component/using (http-server-component) [:config :router]))))
 

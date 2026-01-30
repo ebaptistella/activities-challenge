@@ -6,7 +6,6 @@ target/
 .DS_Store
 *.md
 doc/
-test/
 .env
 .env.local
 docker/
