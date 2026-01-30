@@ -39,6 +39,14 @@
              :db {:connection-uri (System/getenv "DATABASE_URL")}}
   :main ^:skip-aot challenge.core
   :target-path "target/%s"
+  :aliases {"lint" ["shell" "clj-kondo" "--lint" "src" "--parallel"]
+            "lint-fix" ["shell" "clj-kondo" "--copy-configs" "--lint" "src" "--parallel"]
+            "check-all" ["do" ["check"] ["shell" "clj-kondo" "--lint" "src" "--parallel"]]
+            "test-all" ["do" ["test"] ["lint"]]
+            "clean-all" ["do" ["clean"] ["cljsbuild" "clean"]]
+            "repl" ["with-profile" "+dev" "repl"]
+            "uberjar-all" ["do" ["clean"] ["cljsbuild" "once" "app"] ["uberjar"]]}
   :profiles {:uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]
-                       :prep-tasks [["compile"] ["cljsbuild" "once" "app"]]}})
+                       :prep-tasks [["compile"] ["cljsbuild" "once" "app"]]}
+             :dev {}})
