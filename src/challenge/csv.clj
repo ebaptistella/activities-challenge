@@ -1,4 +1,5 @@
 (ns challenge.csv
+  "CSV parsing and validation logic."
   (:require
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
@@ -9,6 +10,16 @@
    (java.time LocalDate)))
 
 (defn detect-type-from-header
+  "Detects CSV type (planned or executed) from header row.
+  
+  Parameters:
+  - header: Vector of header strings
+  
+  Returns:
+  - Keyword :planned or :executed
+  
+  Throws:
+  - ExceptionInfo if header doesn't contain known amount column"
   [header]
   (let [columns (set header)]
     (cond
@@ -81,6 +92,16 @@
   (doall (csv/read-csv r)))
 
 (defn parse-csv-reader
+  "Parses CSV from a Reader and returns structured data.
+  
+  Parameters:
+  - r: Reader instance with CSV content
+  
+  Returns:
+  - Map with :type, :rows (vector of activity maps), :errors (vector of error maps)
+  
+  Throws:
+  - Exception if parsing fails"
   [^Reader r]
   (let [start-time (System/currentTimeMillis)]
     (log/info "Starting CSV parse")
@@ -118,6 +139,16 @@
           (throw e))))))
 
 (defn parse-csv-file
+  "Parses CSV from a file path.
+  
+  Parameters:
+  - path: String with file path
+  
+  Returns:
+  - Map with :type, :rows, :errors
+  
+  Throws:
+  - Exception if file cannot be read or parsed"
   [path]
   (log/info "Starting CSV file parse" {:path path})
   (try

@@ -1,4 +1,5 @@
 (ns challenge.db
+  "Database operations and data access layer."
   (:require
    [next.jdbc :as jdbc]
    [next.jdbc.sql :as sql]
@@ -71,16 +72,40 @@
     (insert-activity tx (assoc row :amount_executed (:amount row)))))
 
 (defn upsert-planned!
+  "Upserts a planned activity row.
+  
+  Parameters:
+  - ds: Database datasource
+  - row: Map with activity data including :date, :activity, :activity_type, :unit, :amount
+  
+  Returns:
+  - Result of database operation"
   [ds row]
   (jdbc/with-transaction [tx ds]
     (upsert-planned-tx! tx row)))
 
 (defn upsert-executed!
+  "Upserts an executed activity row.
+  
+  Parameters:
+  - ds: Database datasource
+  - row: Map with activity data including :date, :activity, :activity_type, :unit, :amount
+  
+  Returns:
+  - Result of database operation"
   [ds row]
   (jdbc/with-transaction [tx ds]
     (upsert-executed-tx! tx row)))
 
 (defn import-planned-batch!
+  "Imports a batch of planned activities.
+  
+  Parameters:
+  - ds: Database datasource
+  - rows: Vector of activity maps
+  
+  Returns:
+  - Result of batch import operation"
   [ds rows]
   (let [start-time (System/currentTimeMillis)
         rows-count (count rows)]
@@ -97,6 +122,14 @@
           (throw e))))))
 
 (defn import-executed-batch!
+  "Imports a batch of executed activities.
+  
+  Parameters:
+  - ds: Database datasource
+  - rows: Vector of activity maps
+  
+  Returns:
+  - Result of batch import operation"
   [ds rows]
   (let [start-time (System/currentTimeMillis)
         rows-count (count rows)]
@@ -113,6 +146,14 @@
           (throw e))))))
 
 (defn query-activities-raw
+  "Queries activities from database with filters.
+  
+  Parameters:
+  - ds: Database datasource
+  - filters: Map with :date, :activity (optional), :activity_type (optional)
+  
+  Returns:
+  - Vector of activity maps with normalized keys"
   [ds {:keys [date activity activity_type]}]
   (let [start-time (System/currentTimeMillis)
         filters {:date date :activity activity :activity_type activity_type}]

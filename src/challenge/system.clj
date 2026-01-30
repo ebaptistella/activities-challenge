@@ -5,7 +5,7 @@
    [migratus.core :as migratus]
    [next.jdbc :as jdbc]
    [ring.adapter.jetty :as jetty]
-   [challenge.api :as api]
+   [challenge.diplomat.http-server :as http-server]
    [clojure.tools.logging :as log]))
 
 (defn- jdbc-spec-from-config [cfg]
@@ -100,8 +100,8 @@
     (log/info "Starting RouterComponent")
     (try
       (let [ds (:datasource database)
-            router (api/create-router ds)
-            handler (api/create-handler router)]
+            router (http-server/create-router ds)
+            handler (http-server/create-handler router)]
         (log/info "RouterComponent started successfully")
         (assoc this :router router :handler handler))
       (catch Exception e
