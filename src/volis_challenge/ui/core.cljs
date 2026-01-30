@@ -34,15 +34,16 @@
 (defn fetch-activities!
   []
   (let [filters (:filters @app-state)
-        params (->> [["date" (:date filters)]
-                     ["activity" (:activity filters)]
-                     ["activity_type" (:activity-type filters)]]
-                    (filter (fn [[_ v]] (not (empty? v))))
+        date-param (or (:date filters) (today-date))
+        params (->> [["date" date-param]
+                     (when (not (empty? (:activity filters)))
+                       ["activity" (:activity filters)])
+                     (when (not (empty? (:activity-type filters)))
+                       ["activity_type" (:activity-type filters)])]
+                    (filter some?)
                     (map (fn [[k v]] (str k "=" (js/encodeURIComponent v))))
                     (str/join "&"))
-        url (if (empty? params)
-              "/api/activities"
-              (str "/api/activities?" params))]
+        url (str "/api/activities?" params)]
     (swap! app-state assoc :activities-loading true :activities-error nil)
     (-> (js/fetch url)
         (.then (fn [response]
