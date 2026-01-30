@@ -71,12 +71,35 @@
       (println "Executando migrations...")
       (println "URI de conexão:" uri)
       (try
+        (let [pending (migratus/pending-list migratus-config)]
+          (println "Migrations pendentes:" (count pending))
+          (doseq [m pending]
+            (println "  -" (:name m))))
         (migratus/migrate migratus-config)
         (println "Migrations executadas com sucesso")
-        (let [tables (jdbc/execute! ds ["SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'activity'"])]
-          (if (seq tables)
+        (let [all-tables (jdbc/execute! ds ["SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename"])
+              activity-table (jdbc/execute! ds ["SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'activity'"])
+              schema-tables (jdbc/execute! ds ["SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'activity'"])]
+          (println "Todas as tabelas no schema public:" (map :tablename all-tables))
+          (if (or (seq activity-table) (seq schema-tables))
             (println "Tabela 'activity' confirmada no banco de dados")
-            (println "AVISO: Tabela 'activity' não encontrada após migrations!")))
+            (do
+              (println "AVISO: Tabela 'activity' não encontrada após migrations!")
+              (println "Tentando criar tabela manualmente...")
+              (jdbc/execute! ds ["CREATE TABLE IF NOT EXISTS activity (
+  id bigserial PRIMARY KEY,
+  date date NOT NULL,
+  activity text NOT NULL,
+  activity_type text NOT NULL,
+  unit text NOT NULL,
+  amount_planned numeric,
+  amount_executed numeric,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
+)"])
+              (jdbc/execute! ds ["CREATE INDEX IF NOT EXISTS idx_activity_date ON activity (date)"])
+              (jdbc/execute! ds ["CREATE INDEX IF NOT EXISTS idx_activity_activity_type ON activity (activity_type)"])
+              (println "Tabela 'activity' criada manualmente"))))
         (catch Exception e
           (println "Erro ao executar migrations:" (.getMessage e))
           (.printStackTrace e)
