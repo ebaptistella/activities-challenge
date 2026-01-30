@@ -127,10 +127,13 @@
    ["/api/import" {:post (fn [req] (import-handler ds req))}]
    ["/api/activities" {:get (fn [req] (activities-handler ds req))}]])
 
-(defn handler
+(defn create-router
   [ds]
-  (let [router (reitit.ring/router (routes ds))
-        reitit-handler (reitit.ring/ring-handler router static-file-handler)]
+  (reitit.ring/router (routes ds)))
+
+(defn create-handler
+  [router]
+  (let [reitit-handler (reitit.ring/ring-handler router static-file-handler)]
     (-> reitit-handler
         params/wrap-params
         multipart/wrap-multipart-params)))

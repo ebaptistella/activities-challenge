@@ -33,9 +33,6 @@
 (defn- http-port-from-config [cfg]
   (get-in cfg [:http :port]))
 
-(defn- make-handler [ds]
-  (api/handler ds))
-
 (defrecord ConfigComponent []
   component/Lifecycle
   (start [this]
@@ -97,7 +94,27 @@
 (defn migration-component []
   (map->MigrationComponent {}))
 
-(defrecord HttpServerComponent [config database]
+(defrecord RouterComponent [database]
+  component/Lifecycle
+  (start [this]
+    (log/info "Iniciando RouterComponent")
+    (try
+      (let [ds (:datasource database)
+            router (api/create-router ds)
+            handler (api/create-handler router)]
+        (log/info "RouterComponent iniciado com sucesso")
+        (assoc this :router router :handler handler))
+      (catch Exception e
+        (log/error e "Erro ao criar router")
+        (throw e))))
+  (stop [this]
+    (log/info "Parando RouterComponent")
+    (dissoc this :router :handler)))
+
+(defn router-component []
+  (map->RouterComponent {}))
+
+(defrecord HttpServerComponent [config router]
   component/Lifecycle
   (start [this]
     (log/info "Iniciando HttpServerComponent")
@@ -105,8 +122,8 @@
           port (http-port-from-config cfg)]
       (log/info "Iniciando servidor HTTP" {:port port})
       (try
-        (let [ds (:datasource database)
-              server (jetty/run-jetty (make-handler ds) {:port port :join? false})]
+        (let [handler (:handler router)
+              server (jetty/run-jetty handler {:port port :join? false})]
           (log/info "Servidor HTTP iniciado com sucesso" {:port port})
           (assoc this :server server))
         (catch Exception e
@@ -127,5 +144,6 @@
    :config (config-component)
    :database (component/using (database-component) [:config])
    :migrations (component/using (migration-component) [:config :database])
-   :http (component/using (http-server-component) [:config :database :migrations])))
+   :router (component/using (router-component) [:database])
+   :http (component/using (http-server-component) [:config :router])))
 
