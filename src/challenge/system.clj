@@ -1,7 +1,6 @@
 (ns challenge.system
   (:require
    [challenge.config :as config]
-   [clojure.java.io :as io]
    [com.stuartsierra.component :as component]
    [migratus.core :as migratus]
    [next.jdbc :as jdbc]
