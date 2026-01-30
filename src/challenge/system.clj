@@ -63,7 +63,7 @@
 (defrecord MigrationComponent [config database]
   component/Lifecycle
   (start [this]
-      (let [cfg (:value config)
+    (let [cfg (:value config)
           uri (connection-uri-from-config cfg)
           migration-resource (io/resource "migrations")
           migration-dir-path (if migration-resource
@@ -114,13 +114,14 @@
               activity-table (if (nil? activity-table-result) [] activity-table-result)
               schema-tables-result (jdbc/execute! ds ["SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'activity'"])
               schema-tables (if (nil? schema-tables-result) [] schema-tables-result)]
-          (println "Todas as tabelas no schema public:" (map :tablename all-tables))
+          (println "Todas as tabelas no schema public:" (if (seq all-tables) (map :tablename all-tables) "nenhuma"))
           (if (or (seq activity-table) (seq schema-tables))
             (println "Tabela 'activity' confirmada no banco de dados")
             (do
               (println "AVISO: Tabela 'activity' não encontrada após migrations!")
               (println "Tentando criar tabela manualmente...")
-              (jdbc/execute! ds ["CREATE TABLE IF NOT EXISTS activity (
+              (try
+                (jdbc/execute! ds ["CREATE TABLE IF NOT EXISTS activity (
   id bigserial PRIMARY KEY,
   date date NOT NULL,
   activity text NOT NULL,
@@ -131,9 +132,15 @@
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now()
 )"])
-              (jdbc/execute! ds ["CREATE INDEX IF NOT EXISTS idx_activity_date ON activity (date)"])
-              (jdbc/execute! ds ["CREATE INDEX IF NOT EXISTS idx_activity_activity_type ON activity (activity_type)"])
-              (println "Tabela 'activity' criada manualmente"))))
+                (jdbc/execute! ds ["CREATE INDEX IF NOT EXISTS idx_activity_date ON activity (date)"])
+                (jdbc/execute! ds ["CREATE INDEX IF NOT EXISTS idx_activity_activity_type ON activity (activity_type)"])
+                (println "Tabela 'activity' criada manualmente")
+                (catch Exception e
+                  (if (.contains (.getMessage e) "already exists")
+                    (println "Tabela 'activity' já existe (criada anteriormente)")
+                    (do
+                      (println "Erro ao criar tabela manualmente:" (.getMessage e))
+                      (throw e))))))))
         (catch Exception e
           (println "Erro ao executar migrations:" (.getMessage e))
           (.printStackTrace e)
