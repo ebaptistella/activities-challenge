@@ -1,6 +1,7 @@
 (ns challenge.system
   (:require
    [challenge.config :as config]
+   [clojure.java.io :as io]
    [com.stuartsierra.component :as component]
    [migratus.core :as migratus]
    [next.jdbc :as jdbc]
@@ -62,12 +63,31 @@
 (defrecord MigrationComponent [config database]
   component/Lifecycle
   (start [this]
-    (let [cfg (:value config)
+      (let [cfg (:value config)
           uri (connection-uri-from-config cfg)
+          migration-resource (io/resource "migrations")
+          migration-dir-path (if migration-resource
+                               (let [url (.toURL migration-resource)
+                                     file (io/file url)]
+                                 (if (.exists file)
+                                   (.getAbsolutePath file)
+                                   (let [path (.getPath url)]
+                                     (if (.startsWith path "file:")
+                                       (.substring path 5)
+                                       path))))
+                               "resources/migrations")
           migratus-config {:store :database
-                           :migration-dir "resources/migrations"
+                           :migration-dir migration-dir-path
                            :db {:connection-uri uri}}
           ds (:datasource database)]
+      (println "Recurso de migrations:" migration-resource)
+      (if migration-resource
+        (println "Recurso encontrado:" (str migration-resource))
+        (println "AVISO: Recurso de migrations não encontrado! Tentando caminho alternativo..."))
+      (let [alt-path (io/file "resources/migrations")]
+        (if (.exists alt-path)
+          (println "Caminho alternativo encontrado:" (.getAbsolutePath alt-path))
+          (println "Caminho alternativo também não encontrado")))
       (println "Executando migrations...")
       (println "URI de conexão:" uri)
       (try
