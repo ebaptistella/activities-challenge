@@ -1,0 +1,27 @@
+{:linters {:unused-namespace {:level :warning}
+           :unused-private-var {:level :warning}
+           :unused-binding {:level :warning}
+           :redundant-do {:level :warning}
+           :redundant-let {:level :warning}
+           :redundant-call {:level :warning}
+           :unused-fn-args {:level :warning}
+           :shadowed-var {:level :off}
+           :deprecated-var {:level :warning}
+           :missing-docstring {:level :off}
+           :invalid-arity {:level :error}
+           :type-mismatch {:level :error}
+           :missing-else-branch {:level :warning}
+           :unreachable-code {:level :warning}
+           :unresolved-symbol {:level :error}
+           :unresolved-namespace {:level :error}
+           :unresolved-var {:level :error}
+           :wrong-arity {:level :error}
+           :wrong-ns-form {:level :error}
+           :syntax {:level :error}}
+ :output {:canonical-paths true
+          :format :edn
+          :progress true
+          :summary true}
+ :lint-as {com.stuartsierra.component/start clojure.core/identity
+           com.stuartsierra.component/stop clojure.core/identity}
+ :config-paths ["."]}

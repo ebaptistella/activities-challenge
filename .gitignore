@@ -11,7 +11,7 @@ pom.xml.asc
 .hg/
 .lsp/
 .cursor/
-.clj-kondo/
+.clj-kondo/.cache/
 .DS_Store
 .env
 .env.local
