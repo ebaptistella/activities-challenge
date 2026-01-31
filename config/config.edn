@@ -1,0 +1,6 @@
+{:database {:host "postgres"
+            :port 5432
+            :name "challenge"
+            :user "postgres"
+            :password "postgres"}
+ :http     {:port 3000}}
