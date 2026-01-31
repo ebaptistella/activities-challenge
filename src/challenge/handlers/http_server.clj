@@ -21,9 +21,6 @@
       :route-name :health-check]}))
 
 (def server-config
-  {::http/type :jetty
-   ::http/routes routes})
-
-(def server-config
-  (merge server-config
+  (merge {::http/type :jetty
+          ::http/routes routes}
          {::http/join? false}))

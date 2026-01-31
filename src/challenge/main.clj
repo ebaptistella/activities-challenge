@@ -1,8 +1,7 @@
 (ns challenge.main
   (:gen-class)
   (:require [challenge.system :as system]
-            [com.stuartsierra.component :as component]
-            [challenge.interceptors.components :as interceptors.components]))
+            [com.stuartsierra.component :as component]))
 
 (defn -main [& _args]
   (let [sys (component/start-system (system/new-dev-system))
