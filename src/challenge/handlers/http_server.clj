@@ -1,4 +1,4 @@
-(ns challenge.handlers.web
+(ns challenge.handlers.http-server
   (:require [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.interceptor :as interceptor]))
@@ -24,6 +24,6 @@
   {::http/type :jetty
    ::http/routes routes})
 
-(def dev-server-config
+(def server-config
   (merge server-config
          {::http/join? false}))
