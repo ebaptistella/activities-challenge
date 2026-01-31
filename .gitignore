@@ -1,6 +1,6 @@
 /target/
 /resources/public/out
-/logs/profiles.clj
+/logs
 /.lein-*
 /.nrepl-port
 /.prepl-port

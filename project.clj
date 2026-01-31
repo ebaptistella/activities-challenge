@@ -19,7 +19,7 @@
   :migratus {:store :database
              :migration-dir "resources/migrations"
              :db {:connection-uri (System/getenv "DATABASE_URL")}}
-  :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "challenge/-main"]}
+  :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "challenge.main/-main"]}
                    :dependencies [[io.pedestal/pedestal.service-tools "0.5.8"]]
                    :main challenge.main}}
   :aliases {:repl ["with-profile" "+dev" "repl"]
