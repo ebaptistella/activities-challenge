@@ -11,7 +11,7 @@
              (assoc context
                     :response {:status 200
                                :headers {"Content-Type" "application/json"}
-                               :body "{\"statusssss\":\"ok\",\"service\":\"challenge\"}"}))}))
+                               :body "{\"status\":\"ok\",\"service\":\"challenge\"}"}))}))
 
 (def routes
   (route/expand-routes
