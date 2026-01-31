@@ -3,18 +3,19 @@
             [challenge.components.configuration :as components.configuration]
             [challenge.components.logger :as components.logger]
             [challenge.components.pedestal :as components.pedestal]
-            [challenge.handlers.http-server :as handlers.http-server]))
+            [challenge.handlers.http-server :as handlers.http-server]
+            [challenge.config.reader :as config.reader]))
 
 (defn new-system
   ([]
    (new-system {}))
   ([{:keys [server-config logger-name]
      :or {server-config handlers.http-server/server-config
-          logger-name "challenge"}}]
+          logger-name config.reader/default-application-name}}]
    (component/system-map
     :logger (components.logger/new-logger logger-name)
     :config (component/using
-             (components.configuration/new-config "config/application.edn")
+             (components.configuration/new-config config.reader/default-config-file)
              [:logger])
     :pedestal (component/using
                (components.pedestal/new-pedestal server-config)
