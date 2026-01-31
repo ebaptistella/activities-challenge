@@ -33,7 +33,6 @@
             :format ["clojure-lsp" "format" "--dry"]
             :diagnostics ["clojure-lsp" "diagnostics"]
             :lint ["do" ["clean-ns"] ["format"] ["diagnostics"]]
-
             :clean-ns-fix ["clojure-lsp" "clean-ns"]
             :format-fix ["clojure-lsp" "format"]
             :lint-fix ["do" ["clean-ns-fix"] ["format-fix"]]}
