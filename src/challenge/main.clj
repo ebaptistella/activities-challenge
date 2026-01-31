@@ -39,6 +39,16 @@
   (stop!)
   (start!))
 
+(defn reload!
+  "Reload namespaces and restart the system. Useful for development when code changes."
+  []
+  (println "[System] Reloading namespaces...")
+  (require 'challenge.handlers.http-server :reload)
+  (require 'challenge.system :reload)
+  (require 'challenge.components.pedestal :reload)
+  (println "[System] Namespaces reloaded. Restarting system...")
+  (restart!))
+
 (defn -main [& _args]
   (let [sys (component/start-system (system/new-dev-system))
         pedestal (:pedestal sys)
