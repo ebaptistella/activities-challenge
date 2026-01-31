@@ -3,13 +3,13 @@
             [challenge.components.configuration :as components.configuration]
             [challenge.components.logger :as components.logger]
             [challenge.components.pedestal :as components.pedestal]
-            [challenge.handlers.web :as handlers]))
+            [challenge.handlers.http-server :as handlers.http-server]))
 
 (defn new-system
   ([]
    (new-system {}))
   ([{:keys [server-config logger-name]
-     :or {server-config handlers/server-config
+     :or {server-config handlers.http-server/server-config
           logger-name "challenge"}}]
    (component/system-map
     :logger (components.logger/new-logger logger-name)
@@ -22,4 +22,4 @@
 
 (defn new-dev-system
   []
-  (new-system {:server-config handlers/dev-server-config}))
+  (new-system {:server-config handlers.http-server/server-config}))
