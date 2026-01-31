@@ -1,10 +1,10 @@
 (ns challenge.system
-  (:require [com.stuartsierra.component :as component]
-            [challenge.components.configuration :as components.configuration]
+  (:require [challenge.components.configuration :as components.configuration]
             [challenge.components.logger :as components.logger]
             [challenge.components.pedestal :as components.pedestal]
+            [challenge.config.reader :as config.reader]
             [challenge.handlers.http-server :as handlers.http-server]
-            [challenge.config.reader :as config.reader]))
+            [com.stuartsierra.component :as component]))
 
 (defn new-system
   ([]

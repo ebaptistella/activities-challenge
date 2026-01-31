@@ -1,6 +1,6 @@
 (ns challenge.components.logger
-  (:require [com.stuartsierra.component :as component]
-            [challenge.config.reader :as config.reader])
+  (:require [challenge.config.reader :as config.reader]
+            [com.stuartsierra.component :as component])
   (:import (org.slf4j LoggerFactory)))
 
 (defrecord LoggerComponent [logger-name logger]
@@ -8,8 +8,8 @@
   (start [this]
     (if logger
       this
-      (let [name (or logger-name config.reader/default-application-name)
-            logger-instance (LoggerFactory/getLogger name)]
+      (let [logger-name-str (or logger-name config.reader/default-application-name)
+            logger-instance (LoggerFactory/getLogger logger-name-str)]
         (assoc this :logger logger-instance))))
   (stop [this]
     (dissoc this :logger)))

@@ -1,7 +1,7 @@
 (ns challenge.components.pedestal
-  (:require [com.stuartsierra.component :as component]
-            [io.pedestal.http :as http]
-            [challenge.config.reader :as config.reader]))
+  (:require [challenge.config.reader :as config.reader]
+            [com.stuartsierra.component :as component]
+            [io.pedestal.http :as http]))
 
 (defrecord PedestalComponent [server-config config logger server jetty-server system]
   component/Lifecycle

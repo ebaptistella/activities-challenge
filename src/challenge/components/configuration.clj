@@ -1,7 +1,7 @@
 (ns challenge.components.configuration
-  (:require [com.stuartsierra.component :as component]
+  (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.edn :as edn]))
+            [com.stuartsierra.component :as component]))
 
 (defn- load-config-file
   [config-file logger]

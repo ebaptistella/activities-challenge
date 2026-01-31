@@ -14,6 +14,9 @@
                  [org.slf4j/log4j-over-slf4j "1.7.26"]
                  [io.pedestal/pedestal.service "0.5.8"]
                  [io.pedestal/pedestal.jetty "0.5.8"]]
+  :plugins [[com.github.clj-kondo/lein-clj-kondo "0.2.5"]
+            [com.github.clojure-lsp/lein-clojure-lsp "2.0.13"]]
+  :clojure-lsp {:settings {:clean {:ns-inner-blocks-indentation :same-line}}}
   :source-paths ["src"]
   :resource-paths ["resources" "config"]
   :migratus {:store :database
@@ -25,5 +28,13 @@
              :repl-auto {:repl-options {:init-ns challenge.repl}}}
   :aliases {:repl ["with-profile" "+dev" "repl"]
             :repl-auto ["with-profile" "+dev,+repl-auto" "repl"]
-            :uberjar-all ["do" ["clean"] ["cljsbuild" "once" "app"] ["uberjar"]]}
+            :uberjar-all ["do" ["clean"] ["cljsbuild" "once" "app"] ["uberjar"]]
+            :clean-ns ["clojure-lsp" "clean-ns" "--dry"]
+            :format ["clojure-lsp" "format" "--dry"]
+            :diagnostics ["clojure-lsp" "diagnostics"]
+            :lint ["do" ["clean-ns"] ["format"] ["diagnostics"]]
+
+            :clean-ns-fix ["clojure-lsp" "clean-ns"]
+            :format-fix ["clojure-lsp" "format"]
+            :lint-fix ["do" ["clean-ns-fix"] ["format-fix"]]}
   :repl-options {:init-ns challenge.main})
