@@ -1,27 +1,29 @@
 (ns challenge.handlers.web
-  (:require [io.pedestal.http :as pedestal.http]
-            [io.pedestal.http.body-params :as pedestal.http.body-params]
-            [io.pedestal.http.route :as pedestal.http.route]
-            [challenge.interceptors.components :as interceptors.components]))
+  (:require [io.pedestal.http :as http]
+            [io.pedestal.http.route :as route]
+            [io.pedestal.interceptor :as interceptor]))
 
-(def common-interceptors
-  [(pedestal.http.body-params/body-params)
-   (interceptors.components/inject-system)
-   (interceptors.components/inject-logger)])
+(def health-check
+  "Health check endpoint interceptor."
+  (interceptor/interceptor
+   {:name ::health-check
+    :enter (fn [context]
+             (assoc context
+                    :response {:status 200
+                               :headers {"Content-Type" "application/json"}
+                               :body "{\"status\":\"ok\",\"service\":\"challenge\"}"}))}))
 
-(defn routes []
-  [#_#{["/" :get (conj common-interceptors home) :route-name :home]}])
+(def routes
+  (route/expand-routes
+   #{["/health"
+      :get
+      health-check
+      :route-name :health-check]}))
 
 (def server-config
-  {::pedestal.http/port 8080
-   ::pedestal.http/type :jetty
-   ::pedestal.http/resource-path "/public"
-   ::pedestal.http/routes (pedestal.http.route/expand-routes (routes))})
+  {::http/type :jetty
+   ::http/routes routes})
 
 (def dev-server-config
   (merge server-config
-         {:env :dev
-          ::pedestal.http/join? false
-          ::pedestal.http/routes #(pedestal.http.route/expand-routes (routes))
-          ::pedestal.http/allowed-origins {:creds true :allowed-origins (constantly true)}
-          ::pedestal.http/secure-headers {:content-security-policy-settings {:object-src "'none'"}}}))
+         {::http/join? false}))

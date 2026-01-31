@@ -1,37 +1,47 @@
 (ns challenge.components.pedestal
   (:require [com.stuartsierra.component :as component]
-            [io.pedestal.http :as pedestal.http]
-            [challenge.config.config :as app-config]))
+            [io.pedestal.http :as http]
+            [challenge.config.reader :as config.reader]))
 
-(defrecord PedestalComponent [server-config config logger server system]
+(defrecord PedestalComponent [server-config config logger server jetty-server system]
   component/Lifecycle
   (start [this]
     (if server
       this
       (let [base-config (or server-config {})
             final-config (if config
-                           (let [port (app-config/http->port config)]
+                           (let [port (config.reader/http->port config)]
                              (if port
-                               (assoc base-config ::pedestal.http/port port)
+                               (assoc base-config ::http/port port)
                                base-config))
                            base-config)
             config-with-context (assoc final-config
-                                       ::pedestal.http/context {:system this})
-            server-instance (-> config-with-context
-                                pedestal.http/default-interceptors
-                                pedestal.http/dev-interceptors
-                                pedestal.http/create-server
-                                pedestal.http/start)]
+                                       ::http/context {:system this})
+            config-with-interceptors (-> config-with-context
+                                         http/default-interceptors
+                                         http/dev-interceptors)
+            server-config-map (http/create-server config-with-interceptors)
+            started-config (http/start server-config-map)
+            jetty-instance (::http/server started-config)]
         (when logger
-          (.info (:logger logger) (str "Pedestal server started on port " (::pedestal.http/port config-with-context))))
-        (assoc this :server server-instance :system this))))
+          (let [routes (::http/routes final-config)
+                route-count (if (map? routes)
+                              (count routes)
+                              (if (sequential? routes)
+                                (count routes)
+                                (if (set? routes)
+                                  (count routes)
+                                  "N/A")))]
+            (.info (:logger logger) (format "[Pedestal] Configuring routes: %s route(s) defined" route-count))
+            (.info (:logger logger) (format "[Pedestal] Server started successfully on port %d" (::http/port final-config)))))
+        (assoc this :server started-config :jetty-server jetty-instance :system this))))
 
   (stop [this]
     (when server
-      (pedestal.http/stop server)
+      (http/stop server)
       (when logger
-        (.info (:logger logger) "Pedestal server stopped")))
-    (dissoc this :server :system)))
+        (.info (:logger logger) "[Pedestal] Server stopped successfully")))
+    (dissoc this :server :jetty-server :system)))
 
 (defn new-pedestal
   [server-config]

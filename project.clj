@@ -21,7 +21,9 @@
              :db {:connection-uri (System/getenv "DATABASE_URL")}}
   :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "challenge.main/-main"]}
                    :dependencies [[io.pedestal/pedestal.service-tools "0.5.8"]]
-                   :main challenge.main}}
+                   :main challenge.main}
+             :repl-auto {:repl-options {:init-ns challenge.repl}}}
   :aliases {:repl ["with-profile" "+dev" "repl"]
+            :repl-auto ["with-profile" "+dev,+repl-auto" "repl"]
             :uberjar-all ["do" ["clean"] ["cljsbuild" "once" "app"] ["uberjar"]]}
   :repl-options {:init-ns challenge.main})

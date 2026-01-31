@@ -14,7 +14,7 @@
    (component/system-map
     :logger (components.logger/new-logger logger-name)
     :config (component/using
-             (components.configuration/new-config "config/config.edn")
+             (components.configuration/new-config "config/application.edn")
              [:logger])
     :pedestal (component/using
                (components.pedestal/new-pedestal server-config)

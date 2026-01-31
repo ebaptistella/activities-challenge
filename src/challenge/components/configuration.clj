@@ -12,15 +12,15 @@
       (if source
         (let [config (edn/read-string (slurp source))]
           (when logger
-            (.info logger (str "Config file loaded: " config-file)))
+            (.info logger (format "[Config] Configuration file loaded: %s" config-file)))
           config)
         (do
           (when logger
-            (.warn logger (str "Config file not found: " config-file)))
+            (.warn logger (format "[Config] Configuration file not found: %s" config-file)))
           {})))
     (catch Exception e
       (if logger
-        (.error logger (str "Could not load config file " config-file) e)
+        (.error logger (format "[Config] Error loading configuration file: %s" config-file) e)
         (println "Warning: Could not load config file" config-file ":" (.getMessage e)))
       {})))
 
