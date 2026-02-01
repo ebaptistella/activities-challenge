@@ -1,12 +1,9 @@
 (ns challenge.infrastructure.http-server.health
-  (:require [io.pedestal.interceptor :as interceptor]))
+  (:require [cheshire.core :as json]))
 
-(def health-check
-  "Health check endpoint interceptor."
-  (interceptor/interceptor
-   {:name ::health-check
-    :enter (fn [context]
-             (assoc context
-                    :response {:status 200
-                               :headers {"Content-Type" "application/json"}
-                               :body "{\"status\":\"ok\",\"service\":\"challenge\"}"}))}))
+(defn health-check
+  [_request]
+  {:status 200
+   :headers {"Content-Type" "application/json"}
+   :body (json/generate-string {:status "ok"
+                                :service "challenge"})})
