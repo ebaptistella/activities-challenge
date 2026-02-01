@@ -1,6 +1,7 @@
 (ns challenge.system
   (:require [challenge.components.configuration :as components.configuration]
             [challenge.components.logger :as components.logger]
+            [challenge.components.migration :as components.migration]
             [challenge.components.pedestal :as components.pedestal]
             [challenge.components.persistency :as components.persistency]
             [challenge.config.reader :as config.reader]
@@ -18,6 +19,9 @@
     :config (component/using
              (components.configuration/new-config config.reader/default-config-file)
              [:logger])
+    :migration (component/using
+                (components.migration/new-migration)
+                [:config :logger])
     :persistency (component/using
                   (components.persistency/new-persistency)
                   [:config :logger])

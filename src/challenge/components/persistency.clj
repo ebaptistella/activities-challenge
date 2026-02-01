@@ -14,14 +14,7 @@
   (start [this]
     (if datasource
       this
-      (let [db-config (config.reader/database-config config)
-            connection-uri (or (System/getenv "DATABASE_URL")
-                               (format "jdbc:postgresql://%s:%d/%s?user=%s&password=%s"
-                                       (:host db-config)
-                                       (:port db-config)
-                                       (:name db-config)
-                                       (:user db-config)
-                                       (:password db-config)))
+      (let [connection-uri (config.reader/database-connection-uri-from-component config)
             ds (connection/->pool HikariDataSource {:jdbcUrl connection-uri})]
         (when logger
           (.info (:logger logger) "[Persistency] Database connection pool started"))

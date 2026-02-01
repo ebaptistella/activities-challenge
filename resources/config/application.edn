@@ -1,6 +1,6 @@
 {:application-name "challenge"
  :config-file "resources/config/application.edn"
- :database {:host "postgres"
+ :database {:host "localhost"
             :port 5432
             :name "challenge"
             :user "postgres"
