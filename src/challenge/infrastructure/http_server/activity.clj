@@ -2,25 +2,13 @@
   (:require [challenge.adapters.activity :as adapters.activity]
             [challenge.controllers.activity :as controllers.activity]
             [challenge.interface.http.response :as response]
-            [challenge.interceptors.components :as interceptors.components]
-            [challenge.wire.in.activity :as wire.in.activity]
-            [cheshire.core :as json]
-            [schema.core :as s]))
-
-(defn- get-json-body
-  [request]
-  (or (:json-params request)
-      (when-let [body (:body request)]
-        (if (string? body)
-          (json/parse-string body true)
-          body))))
+            [challenge.interceptors.components :as interceptors.components]))
 
 (defn create-activity-handler
   [request]
   (try
     (let [persistency (interceptors.components/get-component request :persistency)
-          json-body (get-json-body request)
-          activity-wire (s/validate wire.in.activity/ActivityRequest json-body)
+          activity-wire (:activity-wire request)
           activity-model (adapters.activity/wire->model activity-wire)
           result (controllers.activity/create-activity! activity-model persistency)
           response-wire (adapters.activity/model->wire result)]
@@ -61,8 +49,7 @@
   (try
     (let [persistency (interceptors.components/get-component request :persistency)
           activity-id (Long/parseLong (get-in request [:path-params :id]))
-          json-body (get-json-body request)
-          activity-wire (s/validate wire.in.activity/ActivityUpdateRequest json-body)
+          activity-wire (:activity-wire request)
           activity-model (adapters.activity/update-wire->model activity-wire)
           result (controllers.activity/update-activity! activity-id activity-model persistency)
           response-wire (adapters.activity/model->wire result)]
