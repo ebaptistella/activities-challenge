@@ -20,14 +20,21 @@
                            base-config)
             config-with-context (assoc final-config
                                        ::http/context {:system this})
-            ;; Create an interceptor to inject context into request
-            ;; This ensures the context is available in the request for other interceptors
+            ;; Create an interceptor to inject context and components into request
+            ;; Components are injected under :componentes key for easy destructuring
             context-interceptor (interceptor/interceptor
                                  {:name ::inject-context
                                   :enter (fn [context]
-                                           (let [context-map (::http/context config-with-context)]
-                                             ;; Use http.server namespace to match interceptors.components
-                                             (assoc-in context [:request ::http/context] context-map)))})
+                                           (let [context-map (::http/context config-with-context)
+                                                 system (:system context-map)]
+                                             (-> context
+                                                 ;; Inject full context for backward compatibility
+                                                 (assoc-in [:request ::http/context] context-map)
+                                                 ;; Inject components under :componentes key
+                                                 (assoc-in [:request :componentes] {:persistency (:persistency system)
+                                                                                    :logger (:logger system)
+                                                                                    :config (:config system)
+                                                                                    :pedestal (:pedestal system)}))))})
             config-with-interceptors (-> config-with-context
                                          http/default-interceptors
                                          http/dev-interceptors

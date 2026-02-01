@@ -1,28 +1,21 @@
 (ns challenge.infrastructure.http-server.activity
   (:require [challenge.adapters.activity :as adapters.activity]
             [challenge.controllers.activity :as controllers.activity]
-            [challenge.interface.http.response :as response]
-            [challenge.interceptors.components :as interceptors.components]))
+            [challenge.interface.http.response :as response]))
 
 (defn create-activity-handler
-  [request]
-  (try
-    (let [persistency (interceptors.components/get-component request :persistency)
-          activity-wire (:activity-wire request)
-          activity-model (adapters.activity/wire->model activity-wire)
-          result (controllers.activity/create-activity! activity-model persistency)
-          response-wire (adapters.activity/model->wire result)]
-      (response/created response-wire))
-    (catch clojure.lang.ExceptionInfo e
-      (response/bad-request (.getMessage e)))
-    (catch Exception _
-      (response/internal-server-error "Internal server error"))))
+  [{:keys [activity-wire] componentes :componentes}]
+  (let [{:keys [persistency]} componentes
+        activity-model (adapters.activity/wire->model activity-wire)
+        result (controllers.activity/create-activity! activity-model persistency)
+        response-wire (adapters.activity/model->wire result)]
+    (response/created response-wire)))
 
 (defn get-activity-handler
-  [request]
+  [{:keys [path-params] componentes :componentes}]
   (try
-    (let [persistency (interceptors.components/get-component request :persistency)
-          activity-id (Long/parseLong (get-in request [:path-params :id]))
+    (let [{:keys [persistency]} componentes
+          activity-id (Long/parseLong (get path-params :id))
           result (controllers.activity/get-activity activity-id persistency)]
       (if result
         (let [response-wire (adapters.activity/model->wire result)]
@@ -34,22 +27,18 @@
       (response/internal-server-error "Internal server error"))))
 
 (defn list-activities-handler
-  [request]
-  (try
-    (let [persistency (interceptors.components/get-component request :persistency)
-          results (controllers.activity/list-activities persistency)
-          response-wires (map adapters.activity/model->wire results)
-          response-body {:activities response-wires}]
-      (response/ok response-body))
-    (catch Exception _
-      (response/internal-server-error "Internal server error"))))
+  [{componentes :componentes}]
+  (let [{:keys [persistency]} componentes
+        results (controllers.activity/list-activities persistency)
+        response-wires (map adapters.activity/model->wire results)
+        response-body {:activities response-wires}]
+    (response/ok response-body)))
 
 (defn update-activity-handler
-  [request]
+  [{:keys [activity-wire path-params] componentes :componentes}]
   (try
-    (let [persistency (interceptors.components/get-component request :persistency)
-          activity-id (Long/parseLong (get-in request [:path-params :id]))
-          activity-wire (:activity-wire request)
+    (let [{:keys [persistency]} componentes
+          activity-id (Long/parseLong (get path-params :id))
           activity-model (adapters.activity/update-wire->model activity-wire)
           result (controllers.activity/update-activity! activity-id activity-model persistency)
           response-wire (adapters.activity/model->wire result)]
@@ -64,10 +53,10 @@
       (response/internal-server-error "Internal server error"))))
 
 (defn delete-activity-handler
-  [request]
+  [{:keys [path-params] componentes :componentes}]
   (try
-    (let [persistency (interceptors.components/get-component request :persistency)
-          activity-id (Long/parseLong (get-in request [:path-params :id]))
+    (let [{:keys [persistency]} componentes
+          activity-id (Long/parseLong (get path-params :id))
           _ (controllers.activity/delete-activity! activity-id persistency)]
       (response/no-content))
     (catch clojure.lang.ExceptionInfo e
