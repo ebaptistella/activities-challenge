@@ -34,27 +34,42 @@
                  (let [body (:body response)
                        status (:status response)
                        headers (or (:headers response) {})
-                       content-type (get headers "Content-Type")]
-                   (cond-> context
-                     ;; Set Content-Type header if not present
-                     (not content-type)
-                     (assoc-in [:response :headers "Content-Type"] "application/json")
+                       content-type (get headers "Content-Type")
+                       ;; Determine the serialized body based on type
+                       serialized-body (cond
+                                         ;; Handle 204 No Content (no body)
+                                         (and (nil? body) (= status 204))
+                                         nil
 
-                     ;; Handle 204 No Content (no body)
-                     (and (nil? body) (= status 204))
-                     (update :response dissoc :body)
+                                         ;; Skip if already JSON string
+                                         (string? body)
+                                         body
 
-                     ;; Skip if already JSON string
-                     (string? body)
-                     context
+                                         ;; Serialize Clojure data structures (maps, vectors, lists, sets)
+                                         (or (map? body) (sequential? body) (set? body))
+                                         (json/generate-string body)
 
-                     ;; Serialize Clojure data structures (maps, vectors, lists, sets)
-                     (or (map? body) (sequential? body) (set? body))
-                     (assoc-in [:response :body] (json/generate-string body))
+                                         ;; Handle other types (wrap in object)
+                                         (some? body)
+                                         (json/generate-string {:value (str body)})
 
-                     ;; Handle other types (wrap in object)
-                     (and (some? body) (not (string? body)))
-                     (assoc-in [:response :body] (json/generate-string {:value (str body)})))))))}))
+                                         ;; Default: nil
+                                         :else
+                                         nil)
+                       ;; Build updated response
+                       updated-response (cond-> response
+                                          ;; Set Content-Type header if not present
+                                          (not content-type)
+                                          (assoc-in [:headers "Content-Type"] "application/json")
+
+                                          ;; Update body
+                                          (some? serialized-body)
+                                          (assoc :body serialized-body)
+
+                                          ;; Remove body for 204
+                                          (nil? serialized-body)
+                                          (dissoc :body))]
+                   (assoc context :response updated-response)))))}))
 
 (def error-handler-interceptor
   "Interceptor to handle errors and return appropriate JSON responses.
