@@ -45,8 +45,41 @@
 
 (s/defn model->persistency :- wire.persistency.activity/ActivityPersistency
   [activity :- models.activity/Activity]
-  (wire.persistency.activity/model->persistency activity))
+  (into {}
+        (remove (comp nil? second)
+                {:id (:id activity)
+                 :date (:date activity)
+                 :activity (:activity activity)
+                 :activity_type (:activity-type activity)
+                 :unit (:unit activity)
+                 :amount_planned (:amount-planned activity)
+                 :amount_executed (:amount-executed activity)
+                 :created_at (:created-at activity)
+                 :updated_at (:updated-at activity)})))
 
 (s/defn persistency->model :- models.activity/Activity
-  [persistency-data]
-  (wire.persistency.activity/persistency->model persistency-data))
+  [db-result :- wire.persistency.activity/ActivityPersistency]
+  {:id (:id db-result)
+   :date (when-let [d (:date db-result)]
+           (if (instance? java.sql.Date d)
+             (.toLocalDate d)
+             (if (string? d)
+               (java.time.LocalDate/parse d)
+               d)))
+   :activity (:activity db-result)
+   :activity-type (:activity_type db-result)
+   :unit (:unit db-result)
+   :amount-planned (:amount_planned db-result)
+   :amount-executed (:amount_executed db-result)
+   :created-at (when-let [ca (:created_at db-result)]
+                 (if (instance? java.sql.Timestamp ca)
+                   (.toInstant ca)
+                   (if (string? ca)
+                     (java.time.Instant/parse ca)
+                     ca)))
+   :updated-at (when-let [ua (:updated_at db-result)]
+                 (if (instance? java.sql.Timestamp ua)
+                   (.toInstant ua)
+                   (if (string? ua)
+                     (java.time.Instant/parse ua)
+                     ua)))})
