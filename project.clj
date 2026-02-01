@@ -16,7 +16,8 @@
                  [io.pedestal/pedestal.jetty "0.5.8"]
                  [prismatic/schema "1.4.1"]
                  [cheshire "5.11.0"]
-                 [com.zaxxer/HikariCP "5.1.0"]]
+                 [com.zaxxer/HikariCP "5.1.0"]
+                 [clj-schema "0.5.1"]]
   :plugins [[com.github.clj-kondo/lein-clj-kondo "0.2.5"]
             [com.github.clojure-lsp/lein-clojure-lsp "2.0.13"]]
   :clojure-lsp {:settings {:clean {:ns-inner-blocks-indentation :same-line}}}

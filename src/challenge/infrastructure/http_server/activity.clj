@@ -54,7 +54,7 @@
                (let [request (:request context)
                      persistency (interceptors.components/get-component request :persistency)
                      activity-id (Long/parseLong (get-in request [:path-params :id]))
-                     result (controllers.activity/get-activity! activity-id persistency)]
+                     result (controllers.activity/get-activity activity-id persistency)]
                  (if result
                    (let [response-wire (adapters.activity/model->wire result)]
                      (assoc context :response (json-response 200 response-wire)))
@@ -73,7 +73,7 @@
              (try
                (let [request (:request context)
                      persistency (interceptors.components/get-component request :persistency)
-                     results (controllers.activity/list-activities! persistency)
+                     results (controllers.activity/list-activities persistency)
                      response-wires (map adapters.activity/model->wire results)
                      response-body {:activities response-wires}]
                  (assoc context :response (json-response 200 response-body)))
