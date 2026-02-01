@@ -1,5 +1,5 @@
 (ns challenge.wire.in.activity
-  (:require [clj-schema.core :as schema]
+  (:require [challenge.schema :as schema]
             [schema.core :as s]))
 
 (def activity-request-skeleton

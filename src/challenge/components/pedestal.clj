@@ -1,8 +1,10 @@
 (ns challenge.components.pedestal
   (:require [challenge.config.reader :as config.reader]
+            [challenge.interceptors.logging :as interceptors.logging]
             [challenge.interceptors.validation :as interceptors.validation]
             [com.stuartsierra.component :as component]
-            [io.pedestal.http :as http]))
+            [io.pedestal.http :as http]
+            [io.pedestal.interceptor :as interceptor]))
 
 (defrecord PedestalComponent [server-config config logger server jetty-server system]
   component/Lifecycle
@@ -18,15 +20,26 @@
                            base-config)
             config-with-context (assoc final-config
                                        ::http/context {:system this})
+            ;; Create an interceptor to inject context into request
+            ;; This ensures the context is available in the request for other interceptors
+            context-interceptor (interceptor/interceptor
+                                 {:name ::inject-context
+                                  :enter (fn [context]
+                                           (let [context-map (::http/context config-with-context)]
+                                             ;; Use http.server namespace to match interceptors.components
+                                             (assoc-in context [:request ::http/context] context-map)))})
             config-with-interceptors (-> config-with-context
                                          http/default-interceptors
                                          http/dev-interceptors
                                          (update ::http/interceptors
                                                  (fn [interceptors]
-                                                   (concat [interceptors.validation/json-body
+                                                   ;; Add context injection interceptor first, then logging
+                                                   (concat interceptors
+                                                           [context-interceptor
+                                                            interceptors.logging/logging-interceptor
+                                                            interceptors.validation/json-body
                                                             interceptors.validation/json-response
-                                                            interceptors.validation/error-handler-interceptor]
-                                                           interceptors))))
+                                                            interceptors.validation/error-handler-interceptor]))))
             server-config-map (http/create-server config-with-interceptors)
             started-config (http/start server-config-map)
             jetty-instance (::http/server started-config)]
