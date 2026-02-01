@@ -47,39 +47,50 @@
   [activity :- models.activity/Activity]
   (into {}
         (remove (comp nil? second)
-                {:id (:id activity)
-                 :date (:date activity)
-                 :activity (:activity activity)
-                 :activity_type (:activity-type activity)
-                 :unit (:unit activity)
-                 :amount_planned (:amount-planned activity)
-                 :amount_executed (:amount-executed activity)
-                 :created_at (:created-at activity)
-                 :updated_at (:updated-at activity)})))
+                {:activity/id (:id activity)
+                 :activity/date (:date activity)
+                 :activity/activity (:activity activity)
+                 :activity/activity-type (:activity-type activity)
+                 :activity/unit (:unit activity)
+                 :activity/amount-planned (:amount-planned activity)
+                 :activity/amount-executed (:amount-executed activity)
+                 :activity/created-at (:created-at activity)
+                 :activity/updated-at (:updated-at activity)})))
 
 (s/defn persistency->model :- models.activity/Activity
-  [db-result :- wire.persistency.activity/ActivityPersistency]
-  {:id (:id db-result)
-   :date (when-let [d (:date db-result)]
-           (if (instance? java.sql.Date d)
-             (.toLocalDate d)
-             (if (string? d)
-               (java.time.LocalDate/parse d)
-               d)))
-   :activity (:activity db-result)
-   :activity-type (:activity_type db-result)
-   :unit (:unit db-result)
-   :amount-planned (:amount_planned db-result)
-   :amount-executed (:amount_executed db-result)
-   :created-at (when-let [ca (:created_at db-result)]
-                 (if (instance? java.sql.Timestamp ca)
-                   (.toInstant ca)
-                   (if (string? ca)
-                     (java.time.Instant/parse ca)
-                     ca)))
-   :updated-at (when-let [ua (:updated_at db-result)]
-                 (if (instance? java.sql.Timestamp ua)
-                   (.toInstant ua)
-                   (if (string? ua)
-                     (java.time.Instant/parse ua)
-                     ua)))})
+  "Converts database result to Activity model.
+   Accepts both namespaced keys (from schema) and non-namespaced keys (from database)."
+  [db-result]
+  (let [id (or (:activity/id db-result) (:id db-result))
+        date (or (:activity/date db-result) (:date db-result))
+        activity (or (:activity/activity db-result) (:activity db-result))
+        activity-type (or (:activity/activity-type db-result) (:activity_type db-result))
+        unit (or (:activity/unit db-result) (:unit db-result))
+        amount-planned (or (:activity/amount-planned db-result) (:amount_planned db-result))
+        amount-executed (or (:activity/amount-executed db-result) (:amount_executed db-result))
+        created-at (or (:activity/created-at db-result) (:created_at db-result))
+        updated-at (or (:activity/updated-at db-result) (:updated_at db-result))]
+    {:id id
+     :date (when-let [d date]
+             (if (instance? java.sql.Date d)
+               (.toLocalDate d)
+               (if (string? d)
+                 (java.time.LocalDate/parse d)
+                 d)))
+     :activity activity
+     :activity-type activity-type
+     :unit unit
+     :amount-planned amount-planned
+     :amount-executed amount-executed
+     :created-at (when-let [ca created-at]
+                   (if (instance? java.sql.Timestamp ca)
+                     (.toInstant ca)
+                     (if (string? ca)
+                       (java.time.Instant/parse ca)
+                       ca)))
+     :updated-at (when-let [ua updated-at]
+                   (if (instance? java.sql.Timestamp ua)
+                     (.toInstant ua)
+                     (if (string? ua)
+                       (java.time.Instant/parse ua)
+                       ua)))}))

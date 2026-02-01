@@ -149,11 +149,13 @@
                                        (.getMessage e))
                       (assoc context :response (response/bad-request (str "Validation error: " (.getMessage e)))))))))})))
 
-(defn- not-found-message?
+(defn not-found-message?
   "Checks if an error message indicates a 'not found' condition.
-   Uses case-insensitive matching for common patterns."
+   Uses case-insensitive matching for common patterns.
+   Returns false if error-message is nil."
   [error-message]
-  (when error-message
+  (if (nil? error-message)
+    false
     (let [lower-message (string/lower-case error-message)]
       (or (string/includes? lower-message "not found")
           (string/includes? lower-message "does not exist")

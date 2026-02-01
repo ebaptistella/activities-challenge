@@ -26,17 +26,25 @@
         db-data (adapters.activity/model->persistency activity)]
     (if (:id activity)
       ;; Update existing
-      (let [id (:id activity)
-            update-data (dissoc db-data :id)
-            updated-data (assoc update-data :updated_at (java.time.Instant/now))
-            _ (sql/update! ds :activity updated-data {:id id})]
+      (let [id (:activity/id db-data)
+            update-data (dissoc db-data :activity/id)
+            updated-data (assoc update-data :activity/updated-at (java.time.Instant/now))
+            ;; Convert namespaced keys to snake_case for database
+            db-update-data (into {} (map (fn [[k v]]
+                                           [(keyword (name k)) v])
+                                         updated-data))]
+        (sql/update! ds :activity db-update-data {:id id})
         (find-by-id id persistency))
       ;; Create new
-      (let [insert-data (dissoc db-data :id)
+      (let [insert-data (dissoc db-data :activity/id)
             created-data (assoc insert-data
-                                :created_at (java.time.Instant/now)
-                                :updated_at (java.time.Instant/now))
-            result (sql/insert! ds :activity created-data)
+                                :activity/created-at (java.time.Instant/now)
+                                :activity/updated-at (java.time.Instant/now))
+            ;; Convert namespaced keys to snake_case for database
+            db-insert-data (into {} (map (fn [[k v]]
+                                           [(keyword (name k)) v])
+                                         created-data))
+            result (sql/insert! ds :activity db-insert-data)
             new-id (:id result)]
         (find-by-id new-id persistency)))))
 

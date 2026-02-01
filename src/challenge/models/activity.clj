@@ -3,7 +3,7 @@
             [schema.core :as s]))
 
 (def activity-skeleton
-  {:id              {:schema s/Int                       :required false :doc "Activity unique identifier (auto-generated)"}
+  {:id              {:schema (s/maybe s/Int)             :required false :doc "Activity unique identifier (auto-generated)"}
    :date            {:schema java.time.LocalDate         :required true  :doc "Activity date"}
    :activity        {:schema s/Str                       :required true  :doc "Activity description"}
    :activity-type   {:schema s/Str                       :required true  :doc "Type of activity"}
