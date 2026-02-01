@@ -32,3 +32,8 @@
   [config-component]
   (or (:application-name (get-config config-component))
       default-application-name))
+
+(defn database-config
+  "Returns the database config from the config component."
+  [config-component]
+  (get-in (get-config config-component) [:database]))

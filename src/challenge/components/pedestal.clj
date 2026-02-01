@@ -1,5 +1,6 @@
 (ns challenge.components.pedestal
   (:require [challenge.config.reader :as config.reader]
+            [challenge.interceptors.validation :as interceptors.validation]
             [com.stuartsierra.component :as component]
             [io.pedestal.http :as http]))
 
@@ -19,7 +20,13 @@
                                        ::http/context {:system this})
             config-with-interceptors (-> config-with-context
                                          http/default-interceptors
-                                         http/dev-interceptors)
+                                         http/dev-interceptors
+                                         (update ::http/interceptors
+                                                 (fn [interceptors]
+                                                   (concat [interceptors.validation/json-body
+                                                            interceptors.validation/json-response
+                                                            interceptors.validation/error-handler-interceptor]
+                                                           interceptors))))
             server-config-map (http/create-server config-with-interceptors)
             started-config (http/start server-config-map)
             jetty-instance (::http/server started-config)]
