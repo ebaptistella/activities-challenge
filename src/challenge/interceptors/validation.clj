@@ -22,23 +22,45 @@
                  context)))}))
 
 (def json-response
-  "Interceptor to serialize response body to JSON if it's a map or collection.
-   Uses Cheshire for JSON serialization."
+  "Interceptor that automatically serializes response bodies to JSON and sets Content-Type header.
+   Handles maps, collections, nil bodies, and already-serialized strings.
+   If body is already a string, assumes it's already JSON."
   (interceptor/interceptor
    {:name ::json-response
     :leave (fn [context]
-             (let [response (:response context)
-                   body (:body response)]
-               (if (or (map? body) (sequential? body))
-                 (assoc-in context [:response :body] (json/generate-string body))
-                 context)))}))
+             (let [response (:response context)]
+               (if-not response
+                 context
+                 (let [body (:body response)
+                       status (:status response)
+                       headers (or (:headers response) {})
+                       content-type (get headers "Content-Type")]
+                   (cond-> context
+                     ;; Set Content-Type header if not present
+                     (not content-type)
+                     (assoc-in [:response :headers "Content-Type"] "application/json")
+
+                     ;; Handle 204 No Content (no body)
+                     (and (nil? body) (= status 204))
+                     (update :response dissoc :body)
+
+                     ;; Skip if already JSON string
+                     (string? body)
+                     context
+
+                     ;; Serialize Clojure data structures (maps, vectors, lists, sets)
+                     (or (map? body) (sequential? body) (set? body))
+                     (assoc-in [:response :body] (json/generate-string body))
+
+                     ;; Handle other types (wrap in object)
+                     (and (some? body) (not (string? body)))
+                     (assoc-in [:response :body] (json/generate-string {:value (str body)})))))))}))
 
 (def error-handler-interceptor
-  "Interceptor to handle errors and return appropriate JSON responses."
+  "Interceptor to handle errors and return appropriate JSON responses.
+   The json-response interceptor will automatically serialize the body."
   (interceptor/interceptor
    {:name ::error-handler
     :error (fn [context _exception]
-             (let [response {:status 500
-                             :headers {"Content-Type" "application/json"}
-                             :body (json/generate-string {:error "Internal server error"})}]
-               (assoc context :response response)))}))
+             (assoc context :response {:status 500
+                                       :body {:error "Internal server error"}}))}))

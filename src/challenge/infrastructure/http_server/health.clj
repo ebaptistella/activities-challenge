@@ -1,9 +1,7 @@
 (ns challenge.infrastructure.http-server.health
-  (:require [cheshire.core :as json]))
+  (:require [challenge.interface.http.response :as response]))
 
 (defn health-check
   [_request]
-  {:status 200
-   :headers {"Content-Type" "application/json"}
-   :body (json/generate-string {:status "ok"
-                                :service "challenge"})})
+  (response/ok {:status "ok"
+                :service "challenge"}))
