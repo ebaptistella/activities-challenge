@@ -1,8 +1,9 @@
 {:application-name "challenge"
- :config-file "config/application.edn"
+ :config-file "resources/config/application.edn"
  :database {:host "postgres"
             :port 5432
             :name "challenge"
             :user "postgres"
             :password "postgres"}
- :http     {:port 3000}}
+ :http     {:port 3000
+            :host "0.0.0.0"}}

@@ -13,10 +13,14 @@
       this
       (let [base-config (or server-config {})
             final-config (if config
-                           (let [port (config.reader/http->port config)]
-                             (if port
-                               (assoc base-config ::http/port port)
-                               base-config))
+                           (let [port (config.reader/http->port config)
+                                 host (config.reader/http->host config)
+                                 config-with-port (if port
+                                                    (assoc base-config ::http/port port)
+                                                    base-config)]
+                             (if host
+                               (assoc config-with-port ::http/host host)
+                               config-with-port))
                            base-config)
             config-with-context (assoc final-config
                                        ::http/context {:system this})
@@ -60,7 +64,7 @@
                                   (count routes)
                                   "N/A")))]
             (.info (:logger logger) (format "[Pedestal] Configuring routes: %s route(s) defined" route-count))
-            (.info (:logger logger) (format "[Pedestal] Server started successfully on port %d" (::http/port final-config)))))
+            (.info (:logger logger) (format "[Pedestal] Server started successfully on %s:%d" (::http/host final-config) (::http/port final-config)))))
         (assoc this :server started-config :jetty-server jetty-instance :system this))))
 
   (stop [this]

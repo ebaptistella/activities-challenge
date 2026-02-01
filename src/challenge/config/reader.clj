@@ -5,7 +5,7 @@
   "config/application.edn")
 
 (def default-application-name
-  "service-name")
+  "challenge")
 
 (defn- get-config
   [config-component]
@@ -18,6 +18,10 @@
 (defn http->port
   [config-component]
   (:port (get-http-config config-component)))
+
+(defn http->host
+  [config-component]
+  (:host (get-http-config config-component)))
 
 (defn config-file
   "Returns the config file path from the config component.

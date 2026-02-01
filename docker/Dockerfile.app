@@ -14,7 +14,6 @@ RUN --mount=type=cache,target=/root/.m2/repository \
 
 COPY src/ ./src/
 COPY resources/ ./resources/
-COPY config/ ./config/
 COPY test/ ./test/
 
 RUN --mount=type=cache,target=/root/.m2/repository \

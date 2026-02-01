@@ -6,23 +6,21 @@
 (defn- load-config-file
   [config-file logger]
   (try
-    (let [resource (io/resource config-file)
-          file (when (not resource) (io/file config-file))
-          source (or resource file)]
-      (if source
-        (let [config (edn/read-string (slurp source))]
+    (let [resource (io/resource config-file)]
+      (if resource
+        (let [config (edn/read-string (slurp resource))]
           (when logger
             (.info logger (format "[Config] Configuration file loaded: %s" config-file)))
           config)
         (do
           (when logger
-            (.warn logger (format "[Config] Configuration file not found: %s" config-file)))
-          {})))
+            (.error logger (format "[Config] Configuration file not found in classpath: %s" config-file)))
+          (throw (ex-info (format "Configuration file not found: %s" config-file) {:config-file config-file})))))
     (catch Exception e
       (if logger
         (.error logger (format "[Config] Error loading configuration file: %s" config-file) e)
-        (println "Warning: Could not load config file" config-file ":" (.getMessage e)))
-      {})))
+        (println "Error: Could not load config file" config-file ":" (.getMessage e)))
+      (throw e))))
 
 (defrecord ConfigComponent [config-file logger config]
   component/Lifecycle
