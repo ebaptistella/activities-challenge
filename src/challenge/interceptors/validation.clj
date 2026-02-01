@@ -2,6 +2,7 @@
   (:require [challenge.interface.http.response :as response]
             [challenge.interceptors.components :as interceptors.components]
             [cheshire.core :as json]
+            [clojure.string :as string]
             [io.pedestal.interceptor :as interceptor]
             [schema.core :as s]))
 
@@ -147,20 +148,60 @@
                                                (.getMessage e))))
                       (assoc context :response (response/bad-request (str "Validation error: " (.getMessage e)))))))))})))
 
+(defn- not-found-message?
+  "Checks if an error message indicates a 'not found' condition.
+   Uses case-insensitive matching for common patterns."
+  [error-message]
+  (when error-message
+    (let [lower-message (string/lower-case error-message)]
+      (or (string/includes? lower-message "not found")
+          (string/includes? lower-message "does not exist")
+          (string/includes? lower-message "not exist")))))
+
 (def error-handler-interceptor
   "Interceptor to handle errors and return appropriate JSON responses.
+   Handles:
+   - clojure.lang.ExceptionInfo: Maps to 400 Bad Request or 404 Not Found based on message pattern
+   - NumberFormatException: Maps to 400 Bad Request (invalid parameter format)
+   - Other exceptions: Maps to 500 Internal Server Error
    The json-response interceptor will automatically serialize the body."
   (interceptor/interceptor
    {:name ::error-handler
     :error (fn [context exception]
              (let [request (:request context)
                    logger-comp (interceptors.components/get-component request :logger)
-                   logger (when logger-comp (:logger logger-comp))]
+                   logger (when logger-comp (:logger logger-comp))
+                   ;; Determine response based on exception type
+                   response-map (cond
+                                 ;; ExceptionInfo - could be validation error or not found
+                                  (instance? clojure.lang.ExceptionInfo exception)
+                                  (let [error-message (.getMessage exception)]
+                                    (if (not-found-message? error-message)
+                                      (response/not-found error-message)
+                                      (response/bad-request error-message)))
+
+                                 ;; NumberFormatException - invalid parameter format
+                                  (instance? NumberFormatException exception)
+                                  (response/bad-request "Invalid parameter format")
+
+                                 ;; Default - internal server error
+                                  :else
+                                  (response/internal-server-error "Internal server error"))]
                (when logger
-                 (.error logger (format "[Error Handler] Unhandled exception for %s %s: %s"
-                                        (name (:request-method request))
-                                        (:uri request)
-                                        (.getMessage exception))
-                         exception))
-               (assoc context :response {:status 500
-                                         :body {:error "Internal server error"}})))}))
+                 (let [log-level (if (instance? clojure.lang.ExceptionInfo exception)
+                                   :warn
+                                   (if (instance? NumberFormatException exception)
+                                     :warn
+                                     :error))]
+                   (case log-level
+                     :error (.error logger (format "[Error Handler] Unhandled exception for %s %s: %s"
+                                                   (name (:request-method request))
+                                                   (:uri request)
+                                                   (.getMessage exception))
+                                    exception)
+                     :warn (.warn logger (format "[Error Handler] Exception for %s %s: %s"
+                                                 (name (:request-method request))
+                                                 (:uri request)
+                                                 (.getMessage exception)))
+                     nil)))
+               (assoc context :response response-map)))}))
