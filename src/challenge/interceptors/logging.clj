@@ -1,5 +1,6 @@
 (ns challenge.interceptors.logging
-  (:require [cheshire.core :as json]
+  (:require [challenge.components.logger :as logger]
+            [cheshire.core :as json]
             [challenge.interceptors.components :as interceptors.components]
             [io.pedestal.interceptor :as interceptor]))
 
@@ -26,8 +27,8 @@
 
 (defn- log-request
   "Logs incoming request details."
-  [logger request]
-  (when logger
+  [logger-comp request]
+  (when logger-comp
     (let [method (:request-method request)
           uri (:uri request)
           path-params (:path-params request)
@@ -39,21 +40,25 @@
                                       (string? b) b
                                       (instance? java.io.InputStream b) "[InputStream]"
                                       :else (str b))))
-                              500)]
-      (.info logger (format "[Request] %s %s | Path-params: %s | Query-params: %s | Headers: %s | Body: %s"
-                            (name method) uri path-params query-params headers body)))))
+                              500)
+          log (logger/bound logger-comp)]
+      (logger/log-call log :info
+                       "[Request] %s %s | Path-params: %s | Query-params: %s | Headers: %s | Body: %s"
+                       (name method) uri path-params query-params headers body))))
 
 (defn- log-response
   "Logs outgoing response details."
-  [logger response request]
-  (when logger
+  [logger-comp response request]
+  (when logger-comp
     (let [status (:status response)
           headers (select-keys (:headers response) ["content-type"])
           body (sanitize-body (:body response) 500)
           method (:request-method request)
-          uri (:uri request)]
-      (.info logger (format "[Response] %s %s | Status: %s | Headers: %s | Body: %s"
-                            (name method) uri status headers body)))))
+          uri (:uri request)
+          log (logger/bound logger-comp)]
+      (logger/log-call log :info
+                       "[Response] %s %s | Status: %s | Headers: %s | Body: %s"
+                       (name method) uri status headers body))))
 
 (def logging-interceptor
   "Interceptor to log incoming requests and outgoing responses."
@@ -61,16 +66,12 @@
    {:name ::logging
     :enter (fn [context]
              (let [request (:request context)
-                   logger-comp (interceptors.components/get-component request :logger)
-                   logger (when logger-comp (:logger logger-comp))]
-               (when logger
-                 (log-request logger request))
+                   logger-comp (interceptors.components/get-component request :logger)]
+               (log-request logger-comp request)
                context))
     :leave (fn [context]
              (let [request (:request context)
                    response (:response context)
-                   logger-comp (interceptors.components/get-component request :logger)
-                   logger (when logger-comp (:logger logger-comp))]
-               (when logger
-                 (log-response logger response request))
+                   logger-comp (interceptors.components/get-component request :logger)]
+               (log-response logger-comp response request)
                context))}))

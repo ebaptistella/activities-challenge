@@ -1,5 +1,6 @@
 (ns challenge.components.persistency
   (:require [challenge.config.reader :as config.reader]
+            [challenge.components.logger :as logger]
             [com.stuartsierra.component :as component]
             [next.jdbc.connection :as connection])
   (:import (com.zaxxer.hikari HikariDataSource)))
@@ -15,15 +16,15 @@
     (if datasource
       this
       (let [connection-uri (config.reader/database-connection-uri-from-component config)
-            ds (connection/->pool HikariDataSource {:jdbcUrl connection-uri})]
-        (when logger
-          (.info (:logger logger) "[Persistency] Database connection pool started"))
+            ds (connection/->pool HikariDataSource {:jdbcUrl connection-uri})
+            log (logger/bound logger)]
+        (logger/log-call log :info "[Persistency] Database connection pool started")
         (assoc this :datasource ds))))
   (stop [_this]
     (when datasource
       (.close datasource)
-      (when logger
-        (.info (:logger logger) "[Persistency] Database connection pool closed")))
+      (let [log (logger/bound logger)]
+        (logger/log-call log :info "[Persistency] Database connection pool closed")))
     (dissoc _this :datasource))
 
   IPersistency

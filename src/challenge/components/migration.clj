@@ -1,6 +1,7 @@
 (ns challenge.components.migration
   "Migration component that runs database migrations on system startup."
   (:require [challenge.config.reader :as config.reader]
+            [challenge.components.logger :as logger]
             [migratus.core :as migratus]
             [com.stuartsierra.component :as component]))
 
@@ -14,32 +15,32 @@
             migratus-config {:store :database
                              :migration-dir "migrations"
                              :db {:connection-uri connection-uri}}
-            start-time (System/currentTimeMillis)]
-        (when logger
-          (.info (:logger logger) "[Migration] Starting database migrations")
-          (.info (:logger logger) (format "[Migration] Database: %s:%d/%s"
-                                          (:host db-config)
-                                          (:port db-config)
-                                          (:name db-config))))
+            start-time (System/currentTimeMillis)
+            log (logger/bound logger)]
+        (logger/log-call log :info "[Migration] Starting database migrations")
+        (logger/log-call log :info "[Migration] Database: %s:%d/%s"
+                         (:host db-config)
+                         (:port db-config)
+                         (:name db-config))
         (try
           (let [pending-count (count (migratus/pending-list migratus-config))]
-            (when logger
-              (if (pos? pending-count)
-                (.info (:logger logger) (format "[Migration] Running %d pending migration(s)" pending-count))
-                (.info (:logger logger) "[Migration] No pending migrations")))
+            (if (pos? pending-count)
+              (logger/log-call log :info "[Migration] Running %d pending migration(s)" pending-count)
+              (logger/log-call log :info "[Migration] No pending migrations"))
             (migratus/migrate migratus-config)
-            (when logger
-              (.info (:logger logger)
-                     (format "[Migration] Migrations completed successfully in %d ms"
-                             (- (System/currentTimeMillis) start-time))))
+            (logger/log-call log :info
+                             "[Migration] Migrations completed successfully in %d ms"
+                             (- (System/currentTimeMillis) start-time))
             (assoc this :migratus-config migratus-config))
           (catch Exception e
-            (when logger
-              (.error (:logger logger) (format "[Migration] Error running migrations: %s" (.getMessage e)) e))
+            (logger/log-call log :error
+                             "[Migration] Error running migrations: %s"
+                             (.getMessage e)
+                             e)
             (throw e))))))
   (stop [this]
-    (when logger
-      (.info (:logger logger) "[Migration] Migration component stopped"))
+    (let [log (logger/bound logger)]
+      (logger/log-call log :info "[Migration] Migration component stopped"))
     this))
 
 (defn new-migration

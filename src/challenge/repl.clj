@@ -1,6 +1,7 @@
 (ns challenge.repl
   "REPL utilities with auto-start functionality."
-  (:require [challenge.system :as system]
+  (:require [challenge.components.logger :as logger]
+            [challenge.system :as system]
             [com.stuartsierra.component :as component]))
 
 (defonce system (atom nil))
@@ -14,9 +15,8 @@
       @system)
     (let [_ (reset! system (component/start-system (system/new-dev-system)))
           pedestal (:pedestal @system)
-          logger (:logger @system)]
-      (when logger
-        (.info (:logger logger) "[System] System started successfully - all components are ready"))
+          log (logger/bound (:logger @system))]
+      (logger/log-call log :info "[System] System started successfully - all components are ready")
       (println "[System] System started successfully - all components are ready")
       (when pedestal
         (println "[System] Server running. Check logs for port information."))

@@ -1,5 +1,6 @@
 (ns challenge.components.pedestal
   (:require [challenge.config.reader :as config.reader]
+            [challenge.components.logger :as logger]
             [challenge.interceptors.logging :as interceptors.logging]
             [challenge.interceptors.validation :as interceptors.validation]
             [com.stuartsierra.component :as component]
@@ -54,24 +55,26 @@
             server-config-map (http/create-server config-with-interceptors)
             started-config (http/start server-config-map)
             jetty-instance (::http/server started-config)]
-        (when logger
-          (let [routes (::http/routes final-config)
-                route-count (if (map? routes)
+        (let [routes (::http/routes final-config)
+              route-count (if (map? routes)
+                            (count routes)
+                            (if (sequential? routes)
                               (count routes)
-                              (if (sequential? routes)
+                              (if (set? routes)
                                 (count routes)
-                                (if (set? routes)
-                                  (count routes)
-                                  "N/A")))]
-            (.info (:logger logger) (format "[Pedestal] Configuring routes: %s route(s) defined" route-count))
-            (.info (:logger logger) (format "[Pedestal] Server started successfully on %s:%d" (::http/host final-config) (::http/port final-config)))))
+                                "N/A")))
+              log (logger/bound logger)]
+          (logger/log-call log :info "[Pedestal] Configuring routes: %s route(s) defined" route-count)
+          (logger/log-call log :info "[Pedestal] Server started successfully on %s:%d"
+                           (::http/host final-config)
+                           (::http/port final-config)))
         (assoc this :server started-config :jetty-server jetty-instance :system this))))
 
   (stop [this]
     (when server
       (http/stop server)
-      (when logger
-        (.info (:logger logger) "[Pedestal] Server stopped successfully")))
+      (let [log (logger/bound logger)]
+        (logger/log-call log :info "[Pedestal] Server stopped successfully")))
     (dissoc this :server :jetty-server :system)))
 
 (defn new-pedestal

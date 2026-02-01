@@ -1,5 +1,6 @@
 (ns challenge.interceptors.validation
-  (:require [challenge.interface.http.response :as response]
+  (:require [challenge.components.logger :as logger]
+            [challenge.interface.http.response :as response]
             [challenge.interceptors.components :as interceptors.components]
             [cheshire.core :as json]
             [clojure.string :as string]
@@ -15,21 +16,21 @@
              (let [request (:request context)
                    body (:body request)
                    logger-comp (interceptors.components/get-component request :logger)
-                   logger (when logger-comp (:logger logger-comp))]
+                   log (logger/bound logger-comp)]
                (if (and body (string? body) (not (empty? body)))
                  (try
                    (let [parsed-body (json/parse-string body true)]
-                     (when logger
-                       (.debug logger (format "[JSON Body] Successfully parsed JSON body for %s %s"
-                                              (name (:request-method request))
-                                              (:uri request))))
+                     (logger/log-call log :debug
+                                      "[JSON Body] Successfully parsed JSON body for %s %s"
+                                      (name (:request-method request))
+                                      (:uri request))
                      (assoc-in context [:request :json-params] parsed-body))
                    (catch Exception e
-                     (when logger
-                       (.warn logger (format "[JSON Body] Failed to parse JSON body for %s %s: %s"
-                                             (name (:request-method request))
-                                             (:uri request)
-                                             (.getMessage e))))
+                     (logger/log-call log :warn
+                                      "[JSON Body] Failed to parse JSON body for %s %s: %s"
+                                      (name (:request-method request))
+                                      (:uri request)
+                                      (.getMessage e))
                      (assoc context
                             :response {:status 400
                                        :headers {"Content-Type" "application/json"}
@@ -46,7 +47,7 @@
              (let [request (:request context)
                    response (:response context)
                    logger-comp (interceptors.components/get-component request :logger)
-                   logger (when logger-comp (:logger logger-comp))]
+                   log (logger/bound logger-comp)]
                (if-not response
                  context
                  (let [body (:body response)
@@ -87,11 +88,11 @@
                                           ;; Remove body for 204
                                           (nil? serialized-body)
                                           (dissoc :body))]
-                   (when logger
-                     (.debug logger (format "[JSON Response] Serialized response body for %s %s | Status: %s"
-                                            (name (:request-method request))
-                                            (:uri request)
-                                            status)))
+                   (logger/log-call log :debug
+                                    "[JSON Response] Serialized response body for %s %s | Status: %s"
+                                    (name (:request-method request))
+                                    (:uri request)
+                                    status)
                    (assoc context :response updated-response)))))}))
 
 (defn validate-request-body
@@ -116,36 +117,36 @@
               (let [request (:request context)
                     json-body (:json-params request)
                     logger-comp (interceptors.components/get-component request :logger)
-                    logger (when logger-comp (:logger logger-comp))]
+                    log (logger/bound logger-comp)]
                 (if (nil? json-body)
                   (do
-                    (when logger
-                      (.warn logger (format "[Validation] Request body is required for %s %s"
-                                            (name (:request-method request))
-                                            (:uri request))))
+                    (logger/log-call log :warn
+                                     "[Validation] Request body is required for %s %s"
+                                     (name (:request-method request))
+                                     (:uri request))
                     (assoc context :response (response/bad-request "Request body is required")))
                   (try
                     (let [validated-wire (s/validate schema json-body)]
-                      (when logger
-                        (.debug logger (format "[Validation] Successfully validated request body for %s %s | Target key: %s"
-                                               (name (:request-method request))
-                                               (:uri request)
-                                               target-key)))
+                      (logger/log-call log :debug
+                                       "[Validation] Successfully validated request body for %s %s | Target key: %s"
+                                       (name (:request-method request))
+                                       (:uri request)
+                                       target-key)
                       (assoc-in context [:request target-key] validated-wire))
                     (catch clojure.lang.ExceptionInfo e
                       (let [error-message (or (.getMessage e) "Invalid request data")]
-                        (when logger
-                          (.warn logger (format "[Validation] Schema validation failed for %s %s: %s"
-                                                (name (:request-method request))
-                                                (:uri request)
-                                                error-message)))
+                        (logger/log-call log :warn
+                                         "[Validation] Schema validation failed for %s %s: %s"
+                                         (name (:request-method request))
+                                         (:uri request)
+                                         error-message)
                         (assoc context :response (response/bad-request error-message))))
                     (catch Exception e
-                      (when logger
-                        (.error logger (format "[Validation] Unexpected validation error for %s %s: %s"
-                                               (name (:request-method request))
-                                               (:uri request)
-                                               (.getMessage e))))
+                      (logger/log-call log :error
+                                       "[Validation] Unexpected validation error for %s %s: %s"
+                                       (name (:request-method request))
+                                       (:uri request)
+                                       (.getMessage e))
                       (assoc context :response (response/bad-request (str "Validation error: " (.getMessage e)))))))))})))
 
 (defn- not-found-message?
@@ -170,7 +171,7 @@
     :error (fn [context exception]
              (let [request (:request context)
                    logger-comp (interceptors.components/get-component request :logger)
-                   logger (when logger-comp (:logger logger-comp))
+                   log (logger/bound logger-comp)
                    ;; Determine response based on exception type
                    response-map (cond
                                  ;; ExceptionInfo - could be validation error or not found
@@ -186,22 +187,22 @@
 
                                  ;; Default - internal server error
                                   :else
-                                  (response/internal-server-error "Internal server error"))]
-               (when logger
-                 (let [log-level (if (instance? clojure.lang.ExceptionInfo exception)
-                                   :warn
-                                   (if (instance? NumberFormatException exception)
-                                     :warn
-                                     :error))]
-                   (case log-level
-                     :error (.error logger (format "[Error Handler] Unhandled exception for %s %s: %s"
-                                                   (name (:request-method request))
-                                                   (:uri request)
-                                                   (.getMessage exception))
-                                    exception)
-                     :warn (.warn logger (format "[Error Handler] Exception for %s %s: %s"
-                                                 (name (:request-method request))
-                                                 (:uri request)
-                                                 (.getMessage exception)))
-                     nil)))
+                                  (response/internal-server-error "Internal server error"))
+                   log-level (if (instance? clojure.lang.ExceptionInfo exception)
+                               :warn
+                               (if (instance? NumberFormatException exception)
+                                 :warn
+                                 :error))]
+               (case log-level
+                 :error (logger/log-call log :error
+                                         "[Error Handler] Unhandled exception for %s %s: %s"
+                                         (name (:request-method request))
+                                         (:uri request)
+                                         (.getMessage exception)
+                                         exception)
+                 :warn (logger/log-call log :warn
+                                        "[Error Handler] Exception for %s %s: %s"
+                                        (name (:request-method request))
+                                        (:uri request)
+                                        (.getMessage exception)))
                (assoc context :response response-map)))}))
