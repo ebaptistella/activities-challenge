@@ -1,7 +1,7 @@
 (ns challenge.interceptors.validation
   (:require [challenge.components.logger :as logger]
-            [challenge.interface.http.response :as response]
             [challenge.interceptors.components :as interceptors.components]
+            [challenge.interface.http.response :as response]
             [cheshire.core :as json]
             [clojure.string :as string]
             [io.pedestal.interceptor :as interceptor]

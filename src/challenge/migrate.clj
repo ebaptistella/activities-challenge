@@ -3,8 +3,8 @@
   (:gen-class)
   (:require [challenge.components.configuration :as components.configuration]
             [challenge.config.reader :as config.reader]
-            [migratus.core :as migratus]
-            [com.stuartsierra.component :as component]))
+            [com.stuartsierra.component :as component]
+            [migratus.core :as migratus]))
 
 (defn run-migrations
   "Runs database migrations using the configuration from application.edn.

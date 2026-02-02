@@ -1,0 +1,35 @@
+;; Configuration for cljfmt indentation rules
+;; This file customizes how cljfmt indents specific forms
+;; See: https://github.com/weavejester/cljfmt#indentation-rules
+
+{;; Common Nubank/Diplomat patterns
+ schema.core/defschema [[:inner 0]]
+ schema.core/defn [[:inner 0]]
+ 
+ ;; Component system
+ component/start [[:inner 0]]
+ component/stop [[:inner 0]]
+ 
+ ;; Pedestal patterns
+ io.pedestal.http/start [[:inner 0]]
+ io.pedestal.http/stop [[:inner 0]]
+ 
+ ;; Testing patterns
+ clojure.test/deftest [[:inner 0]]
+ clojure.test/testing [[:inner 0]]
+ state-flow.core/flow [[:inner 0]]
+ state-flow.core/match? [[:inner 0]]
+ 
+ ;; Common Clojure patterns
+ let [[:block 2]]
+ if [[:block 2]]
+ when [[:block 2]]
+ cond [[:block 0]]
+ case [[:block 1]]
+ 
+ ;; Data structures
+ def [[:inner 0]]
+ defn [[:inner 0]]
+ defprotocol [[:inner 0]]
+ defrecord [[:inner 0]]
+ deftype [[:inner 0]]}

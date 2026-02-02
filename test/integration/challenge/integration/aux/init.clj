@@ -3,12 +3,11 @@
             [challenge.components.logger :as components.logger]
             [challenge.components.pedestal :as components.pedestal]
             [challenge.handlers.http-server :as handlers.http-server]
-            [challenge.integration.aux.mock-persistency :as mock-persistency]
             [challenge.infrastructure.persistency.activity :as persistency.activity]
+            [challenge.integration.aux.mock-persistency :as mock-persistency]
             [com.stuartsierra.component :as component]
             [io.pedestal.http :as http]
-            [schema.test :refer [validate-schemas]]
-            [state-flow.api :as flow :refer [flow]]))
+            [state-flow.api :as flow]))
 
 (defn init!
   "Initializes the test system with mocked components.

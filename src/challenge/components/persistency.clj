@@ -1,6 +1,6 @@
 (ns challenge.components.persistency
-  (:require [challenge.config.reader :as config.reader]
-            [challenge.components.logger :as logger]
+  (:require [challenge.components.logger :as logger]
+            [challenge.config.reader :as config.reader]
             [com.stuartsierra.component :as component]
             [next.jdbc.connection :as connection])
   (:import (com.zaxxer.hikari HikariDataSource)))

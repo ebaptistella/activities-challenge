@@ -1,9 +1,9 @@
 (ns challenge.adapters.activity-test
-  (:require [clojure.test :refer [deftest is testing use-fixtures]]
-            [schema.test :refer [validate-schemas]]
-            [challenge.adapters.activity :as adapters.activity])
-  (:import [java.time LocalDate Instant]
-           [java.sql Date Timestamp]))
+  (:require [challenge.adapters.activity :as adapters.activity]
+            [clojure.test :refer [deftest is testing use-fixtures]]
+            [schema.test :refer [validate-schemas]])
+  (:import [java.sql Date Timestamp]
+           [java.time Instant LocalDate]))
 
 (use-fixtures :once validate-schemas)
 

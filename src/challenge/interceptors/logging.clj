@@ -1,7 +1,7 @@
 (ns challenge.interceptors.logging
   (:require [challenge.components.logger :as logger]
-            [cheshire.core :as json]
             [challenge.interceptors.components :as interceptors.components]
+            [cheshire.core :as json]
             [io.pedestal.interceptor :as interceptor]))
 
 (defn- sanitize-body

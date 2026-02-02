@@ -1,9 +1,9 @@
 (ns challenge.components.migration
   "Migration component that runs database migrations on system startup."
-  (:require [challenge.config.reader :as config.reader]
-            [challenge.components.logger :as logger]
-            [migratus.core :as migratus]
-            [com.stuartsierra.component :as component]))
+  (:require [challenge.components.logger :as logger]
+            [challenge.config.reader :as config.reader]
+            [com.stuartsierra.component :as component]
+            [migratus.core :as migratus]))
 
 (defrecord MigrationComponent [config logger]
   component/Lifecycle

@@ -1,6 +1,6 @@
 (ns challenge.interceptors.validation-test
-  (:require [clojure.test :refer [deftest is testing]]
-            [challenge.interceptors.validation :as validation]))
+  (:require [challenge.interceptors.validation :as validation]
+            [clojure.test :refer [deftest is testing]]))
 
 (deftest not-found-message?-test
   (testing "returns true for 'not found'"

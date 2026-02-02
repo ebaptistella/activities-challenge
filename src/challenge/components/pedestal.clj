@@ -1,6 +1,6 @@
 (ns challenge.components.pedestal
-  (:require [challenge.config.reader :as config.reader]
-            [challenge.components.logger :as logger]
+  (:require [challenge.components.logger :as logger]
+            [challenge.config.reader :as config.reader]
             [challenge.interceptors.logging :as interceptors.logging]
             [challenge.interceptors.validation :as interceptors.validation]
             [com.stuartsierra.component :as component]

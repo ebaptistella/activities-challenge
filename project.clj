@@ -19,7 +19,9 @@
                  [com.zaxxer/HikariCP "5.1.0"]
                  [clj-schema "0.5.1"]]
   :plugins [[com.github.clj-kondo/lein-clj-kondo "0.2.5"]
-            [com.github.clojure-lsp/lein-clojure-lsp "2.0.13"]]
+            [com.github.clojure-lsp/lein-clojure-lsp "2.0.13"]
+            [lein-cljfmt "0.8.2"]
+            [lein-nsorg "0.3.0"]]
   :clojure-lsp {:settings {:clean {:ns-inner-blocks-indentation :same-line}}}
   :source-paths ["src"]
   :test-paths ["test/unit" "test/integration"]
@@ -38,11 +40,21 @@
   :aliases {:repl ["with-profile" "+dev" "repl"]
             :repl-auto ["with-profile" "+dev,+repl-auto" "repl"]
             :uberjar-all ["do" ["clean"] ["cljsbuild" "once" "app"] ["uberjar"]]
+            ;; clojure-lsp commands
             :clean-ns ["clojure-lsp" "clean-ns" "--dry"]
             :format ["clojure-lsp" "format" "--dry"]
             :diagnostics ["clojure-lsp" "diagnostics"]
-            :lint ["do" ["clean-ns"] ["format"] ["diagnostics"]]
             :clean-ns-fix ["clojure-lsp" "clean-ns"]
             :format-fix ["clojure-lsp" "format"]
-            :lint-fix ["do" ["clean-ns-fix"] ["format-fix"]]}
+            ;; cljfmt commands (code formatting)
+            :cljfmt ["cljfmt" "check"]
+            :cljfmt-fix ["cljfmt" "fix"]
+            ;; nsorg commands (namespace require organization)
+            ;; Note: nsorg shows diff by default, --replace applies changes
+            :nsorg-check ["nsorg"]
+            :nsorg-fix ["nsorg" "--replace"]
+            ;; clj-kondo commands (static analysis)
+            :kondo ["clj-kondo" "--lint" "src" "test"]
+            ;; Combined lint commands
+            :lint ["do" ["clean-ns"] ["format"] ["diagnostics"] ["cljfmt"] ["nsorg-check"] ["kondo"]]}
   :repl-options {:init-ns challenge.main})

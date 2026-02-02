@@ -1,8 +1,8 @@
 (ns challenge.schema-test
-  (:require [clojure.test :refer [deftest is testing use-fixtures]]
-            [schema.test :refer [validate-schemas]]
-            [challenge.schema :as schema]
-            [schema.core :as s]))
+  (:require [challenge.schema :as schema]
+            [clojure.test :refer [deftest is testing use-fixtures]]
+            [schema.core :as s]
+            [schema.test :refer [validate-schemas]]))
 
 (use-fixtures :once validate-schemas)
 
