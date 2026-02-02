@@ -22,7 +22,7 @@
             [com.github.clojure-lsp/lein-clojure-lsp "2.0.13"]]
   :clojure-lsp {:settings {:clean {:ns-inner-blocks-indentation :same-line}}}
   :source-paths ["src"]
-  :test-paths ["test/unit"]
+  :test-paths ["test/unit" "test/integration"]
   :resource-paths ["resources"]
   :main challenge.main
   :aot [challenge.main]
@@ -32,7 +32,8 @@
   :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "challenge.main/-main"]}
                    :dependencies [[io.pedestal/pedestal.service-tools "0.5.8"]
                                   [nubank/matcher-combinators "3.8.3"]
-                                  [nubank/mockfn "0.7.0"]]}
+                                  [nubank/mockfn "0.7.0"]
+                                  [nubank/state-flow "5.20.0"]]}
              :repl-auto {:repl-options {:init-ns challenge.repl}}}
   :aliases {:repl ["with-profile" "+dev" "repl"]
             :repl-auto ["with-profile" "+dev,+repl-auto" "repl"]
