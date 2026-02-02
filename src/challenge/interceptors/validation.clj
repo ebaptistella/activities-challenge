@@ -17,14 +17,22 @@
                    body (:body request)
                    logger-comp (interceptors.components/get-component request :logger)
                    log (logger/bound logger-comp)]
-               (if (and body (string? body) (not (empty? body)))
+               (if body
                  (try
-                   (let [parsed-body (json/parse-string body true)]
-                     (logger/log-call log :debug
-                                      "[JSON Body] Successfully parsed JSON body for %s %s"
-                                      (name (:request-method request))
-                                      (:uri request))
-                     (assoc-in context [:request :json-params] parsed-body))
+                   (let [body-str (cond
+                                    (string? body) body
+                                    (instance? java.io.InputStream body) (slurp body)
+                                    :else (str body))
+                         parsed-body (when (and body-str (not (empty? body-str)))
+                                       (json/parse-string body-str true))]
+                     (if parsed-body
+                       (do
+                         (logger/log-call log :debug
+                                          "[JSON Body] Successfully parsed JSON body for %s %s"
+                                          (name (:request-method request))
+                                          (:uri request))
+                         (assoc-in context [:request :json-params] parsed-body))
+                       context))
                    (catch Exception e
                      (logger/log-call log :warn
                                       "[JSON Body] Failed to parse JSON body for %s %s: %s"
@@ -143,11 +151,35 @@
                         (assoc context :response (response/bad-request error-message))))
                     (catch Exception e
                       (logger/log-call log :error
-                                       "[Validation] Unexpected validation error for %s %s: %s"
+                                       "[Validation] Unexpected validation error for %s %s: %s | Exception type: %s | Stack trace: %s"
                                        (name (:request-method request))
                                        (:uri request)
-                                       (.getMessage e))
+                                       (.getMessage e)
+                                       (type e)
+                                       (pr-str (map str (.getStackTrace e))))
                       (assoc context :response (response/bad-request (str "Validation error: " (.getMessage e)))))))))})))
+
+(def validate-path-params-id
+  "Interceptor to validate and parse the :id path parameter as a Long.
+   If the ID is present but invalid, throws NumberFormatException which will be
+   caught by error-handler-interceptor and converted to 400 Bad Request.
+   If valid, adds the parsed ID to the request as :activity-id for handlers to use."
+  (interceptor/interceptor
+   {:name ::validate-path-params-id
+    :enter (fn [context]
+             (let [request (:request context)
+                   path-params (:path-params request)
+                   id-str (get path-params :id)
+                   logger-comp (interceptors.components/get-component request :logger)
+                   log (logger/bound logger-comp)]
+               (if (nil? id-str)
+                 ;; No ID in path params, continue (for routes that don't require ID)
+                 context
+                 (let [activity-id (Long/parseLong id-str)]
+                   (logger/log-call log :debug
+                                    "[Path Params Validation] Successfully parsed activity ID: %s"
+                                    activity-id)
+                   (assoc-in context [:request :activity-id] activity-id)))))}))
 
 (defn not-found-message?
   "Checks if an error message indicates a 'not found' condition.
@@ -174,11 +206,13 @@
              (let [request (:request context)
                    logger-comp (interceptors.components/get-component request :logger)
                    log (logger/bound logger-comp)
+                   exception-type (type exception)
+                   exception-message (.getMessage exception)
                    ;; Determine response based on exception type
                    response-map (cond
                                  ;; ExceptionInfo - could be validation error or not found
                                   (instance? clojure.lang.ExceptionInfo exception)
-                                  (let [error-message (.getMessage exception)]
+                                  (let [error-message exception-message]
                                     (if (not-found-message? error-message)
                                       (response/not-found error-message)
                                       (response/bad-request error-message)))
@@ -197,14 +231,18 @@
                                  :error))]
                (case log-level
                  :error (logger/log-call log :error
-                                         "[Error Handler] Unhandled exception for %s %s: %s"
+                                         "[Error Handler] Unhandled exception for %s %s | Type: %s | Message: %s | Exception: %s | Stack: %s"
                                          (name (:request-method request))
                                          (:uri request)
-                                         (.getMessage exception)
-                                         exception)
+                                         exception-type
+                                         exception-message
+                                         (pr-str exception)
+                                         (pr-str (take 5 (map str (.getStackTrace exception)))))
                  :warn (logger/log-call log :warn
-                                        "[Error Handler] Exception for %s %s: %s"
+                                        "[Error Handler] Exception for %s %s | Type: %s | Message: %s | Exception: %s"
                                         (name (:request-method request))
                                         (:uri request)
-                                        (.getMessage exception)))
+                                        exception-type
+                                        exception-message
+                                        (pr-str exception)))
                (assoc context :response response-map)))}))

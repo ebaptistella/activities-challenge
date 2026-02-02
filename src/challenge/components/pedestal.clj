@@ -7,7 +7,7 @@
             [io.pedestal.http :as http]
             [io.pedestal.interceptor :as interceptor]))
 
-(defrecord PedestalComponent [server-config config logger server jetty-server system]
+(defrecord PedestalComponent [server-config config logger persistency server jetty-server system]
   component/Lifecycle
   (start [this]
     (if server
@@ -23,23 +23,41 @@
                                (assoc config-with-port ::http/host host)
                                config-with-port))
                            base-config)
+            ;; Build the full system map from available components
+            ;; In Component System, components have access to their dependencies
+            ;; We construct a system map with all components for the interceptor
+            full-system-map {:logger logger
+                             :config config
+                             :persistency persistency
+                             :pedestal this}
             config-with-context (assoc final-config
-                                       ::http/context {:system this})
+                                       ::http/context {:system full-system-map})
             ;; Create an interceptor to inject context and components into request
             ;; Components are injected under :componentes key for easy destructuring
             context-interceptor (interceptor/interceptor
                                  {:name ::inject-context
                                   :enter (fn [context]
                                            (let [context-map (::http/context config-with-context)
-                                                 system (:system context-map)]
+                                                 system-from-context (:system context-map)
+                                                 ;; Get components from the system
+                                                 persistency-comp (:persistency system-from-context)
+                                                 logger-comp (:logger system-from-context)
+                                                 config-comp (:config system-from-context)
+                                                 pedestal-comp (:pedestal system-from-context)]
+                                             (logger/log-call (logger/bound logger-comp)
+                                                              :debug
+                                                              "[Pedestal Interceptor] Injecting components | persistency: %s | logger: %s | config: %s"
+                                                              (some? persistency-comp)
+                                                              (some? logger-comp)
+                                                              (some? config-comp))
                                              (-> context
                                                  ;; Inject full context for backward compatibility
                                                  (assoc-in [:request ::http/context] context-map)
                                                  ;; Inject components under :componentes key
-                                                 (assoc-in [:request :componentes] {:persistency (:persistency system)
-                                                                                    :logger (:logger system)
-                                                                                    :config (:config system)
-                                                                                    :pedestal (:pedestal system)}))))})
+                                                 (assoc-in [:request :componentes] {:persistency persistency-comp
+                                                                                    :logger logger-comp
+                                                                                    :config config-comp
+                                                                                    :pedestal pedestal-comp}))))})
             config-with-interceptors (-> config-with-context
                                          http/default-interceptors
                                          http/dev-interceptors
@@ -68,7 +86,7 @@
           (logger/log-call log :info "[Pedestal] Server started successfully on %s:%d"
                            (::http/host final-config)
                            (::http/port final-config)))
-        (assoc this :server started-config :jetty-server jetty-instance :system this))))
+        (assoc this :server started-config :jetty-server jetty-instance :system full-system-map))))
 
   (stop [this]
     (when server

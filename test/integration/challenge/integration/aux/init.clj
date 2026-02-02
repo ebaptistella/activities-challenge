@@ -9,38 +9,81 @@
             [io.pedestal.http :as http]
             [state-flow.api :as flow]))
 
+;; Atom to store the current mock persistency instance during test execution
+(def ^:private mock-persistency-instance (atom nil))
+
+;; Store original functions to restore them later
+(def ^:private original-find-by-id (atom nil))
+(def ^:private original-find-all (atom nil))
+(def ^:private original-save! (atom nil))
+(def ^:private original-delete! (atom nil))
+
+(defn- setup-mocks!
+  "Sets up mock functions for persistency operations"
+  [mock-persistency]
+  (reset! mock-persistency-instance mock-persistency)
+  ;; Store original functions if not already stored
+  (when (nil? @original-find-by-id)
+    (reset! original-find-by-id persistency.activity/find-by-id)
+    (reset! original-find-all persistency.activity/find-all)
+    (reset! original-save! persistency.activity/save!)
+    (reset! original-delete! persistency.activity/delete!))
+  ;; Replace with mock implementations
+  (alter-var-root #'persistency.activity/find-by-id
+                  (constantly (fn [id _persistency]
+                                (mock-persistency/find-by-id id mock-persistency))))
+  (alter-var-root #'persistency.activity/find-all
+                  (constantly (fn [_persistency]
+                                (mock-persistency/find-all mock-persistency))))
+  (alter-var-root #'persistency.activity/save!
+                  (constantly (fn [activity _persistency]
+                                (mock-persistency/save! activity mock-persistency))))
+  (alter-var-root #'persistency.activity/delete!
+                  (constantly (fn [id _persistency]
+                                (mock-persistency/delete! id mock-persistency)))))
+
+(defn- restore-originals!
+  "Restores original persistency functions"
+  []
+  (when @original-find-by-id
+    (alter-var-root #'persistency.activity/find-by-id (constantly @original-find-by-id))
+    (alter-var-root #'persistency.activity/find-all (constantly @original-find-all))
+    (alter-var-root #'persistency.activity/save! (constantly @original-save!))
+    (alter-var-root #'persistency.activity/delete! (constantly @original-delete!))))
+
 (defn init!
   "Initializes the test system with mocked components.
    Returns a function that returns the initial state for state-flow.
    This follows the pattern used in ordnungsamt project."
   []
   (fn []
-    (let [mock-persistency (component/start (mock-persistency/new-mock-persistency))
-          logger (component/start (components.logger/new-logger "test"))
-          config (component/start (components.configuration/new-config "config/application.edn"))
-          server-config (assoc handlers.http-server/server-config
+    (let [server-config (assoc handlers.http-server/server-config
                                ::http/port 0  ; Use random port for tests
                                ::http/host "localhost")
-          pedestal (component/start (components.pedestal/new-pedestal server-config))
           test-system (component/system-map
-                       :logger logger
-                       :config config
-                       :persistency mock-persistency
-                       :pedestal pedestal)]
-      ;; Mock persistency functions to use mock implementation
-      (clojure.core/with-redefs [persistency.activity/find-by-id (fn [id persistency]
-                                                                   (mock-persistency/find-by-id id mock-persistency))
-                                 persistency.activity/find-all (fn [persistency]
-                                                                 (mock-persistency/find-all mock-persistency))
-                                 persistency.activity/save! (fn [activity persistency]
-                                                              (mock-persistency/save! activity mock-persistency))
-                                 persistency.activity/delete! (fn [id persistency]
-                                                                (mock-persistency/delete! id mock-persistency))]
-        {:system test-system
-         :persistency mock-persistency
-         :logger logger
-         :config config
-         :pedestal pedestal}))))
+                       :logger (components.logger/new-logger "test")
+                       :config (component/using
+                                (components.configuration/new-config "config/application.edn")
+                                [:logger])
+                       :persistency (component/using
+                                     (mock-persistency/new-mock-persistency)
+                                     [])
+                       :pedestal (component/using
+                                  (components.pedestal/new-pedestal server-config)
+                                  [:config :logger :persistency]))
+          started-system (component/start-system test-system)
+          ;; Extract components from started system for backward compatibility
+          mock-persistency (:persistency started-system)
+          logger (:logger started-system)
+          config (:config started-system)
+          pedestal (:pedestal started-system)]
+      ;; Setup mock functions to use mock persistency
+      (setup-mocks! mock-persistency)
+      {:system started-system
+       :persistency mock-persistency
+       :logger logger
+       :config config
+       :pedestal pedestal})))
 
 (defn cleanup!
   "Stops the test system and cleans up resources.
@@ -48,7 +91,11 @@
   []
   (fn [state]
     (when-let [system (:system state)]
-      (component/stop-system system))))
+      (component/stop-system system))
+    ;; Note: We don't restore original functions here because all tests need mocks
+    ;; and tests run sequentially. Original functions are only needed if running
+    ;; unit tests after integration tests in the same JVM session.
+    ))
 
 (defmacro defflow
   "Defines a state-flow test with automatic system initialization and schema validation.

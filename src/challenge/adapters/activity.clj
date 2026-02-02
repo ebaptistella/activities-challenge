@@ -19,17 +19,18 @@
    :created-at nil
    :updated-at nil})
 
-(s/defn update-wire->model :- models.activity/Activity
+(s/defn update-wire->model
+  "Converts update wire request to a map of updates (only non-nil fields).
+   Returns a map suitable for passing to update-activity! controller."
   [{:keys [date activity activity-type unit amount-planned amount-executed]}]
-  {:id nil
-   :date (when date (LocalDate/parse date))
-   :activity activity
-   :activity-type activity-type
-   :unit unit
-   :amount-planned amount-planned
-   :amount-executed amount-executed
-   :created-at nil
-   :updated-at nil})
+  (into {}
+        (remove (comp nil? second)
+                {:date (when date (LocalDate/parse date))
+                 :activity activity
+                 :activity-type activity-type
+                 :unit unit
+                 :amount-planned amount-planned
+                 :amount-executed amount-executed})))
 
 (s/defn model->wire :- wire.out.activity/ActivityResponse
   [activity :- models.activity/Activity]

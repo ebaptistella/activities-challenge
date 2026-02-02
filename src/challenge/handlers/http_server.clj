@@ -27,19 +27,22 @@
 
      ["/activities/:id"
       :get
-      http-server.activity/get-activity-handler
+      [interceptors.validation/validate-path-params-id
+       http-server.activity/get-activity-handler]
       :route-name :get-activity]
 
      ["/activities/:id"
       :put
       [interceptors.validation/json-body
        (interceptors.validation/validate-request-body wire.in.activity/ActivityUpdateRequest :activity-wire)
+       interceptors.validation/validate-path-params-id
        http-server.activity/update-activity-handler]
       :route-name :update-activity]
 
      ["/activities/:id"
       :delete
-      http-server.activity/delete-activity-handler
+      [interceptors.validation/validate-path-params-id
+       http-server.activity/delete-activity-handler]
       :route-name :delete-activity]}))
 
 (def server-config

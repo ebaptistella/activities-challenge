@@ -7,21 +7,21 @@
 
 (s/defn find-by-id :- (s/maybe models.activity/Activity)
   [activity-id :- s/Int
-   persistency :- components.persistency/IPersistency]
+   persistency]
   (let [ds (components.persistency/get-datasource persistency)
         db-result (sql/get-by-id ds :activity activity-id)]
     (when db-result
       (adapters.activity/persistency->model db-result))))
 
 (s/defn find-all :- [models.activity/Activity]
-  [persistency :- components.persistency/IPersistency]
+  [persistency]
   (let [ds (components.persistency/get-datasource persistency)
         db-results (sql/query ds ["SELECT * FROM activity ORDER BY date DESC, id DESC"])]
     (map adapters.activity/persistency->model db-results)))
 
 (s/defn save! :- models.activity/Activity
   [activity :- models.activity/Activity
-   persistency :- components.persistency/IPersistency]
+   persistency]
   (let [ds (components.persistency/get-datasource persistency)
         db-data (adapters.activity/model->persistency activity)]
     (if (:id activity)
@@ -50,7 +50,7 @@
 
 (s/defn delete! :- s/Bool
   [activity-id :- s/Int
-   persistency :- components.persistency/IPersistency]
+   persistency]
   (let [ds (components.persistency/get-datasource persistency)
         result (sql/delete! ds :activity {:id activity-id})]
     (> (first result) 0)))

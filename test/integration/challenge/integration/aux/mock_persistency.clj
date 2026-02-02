@@ -37,13 +37,13 @@
 ;; Mock implementations of persistency functions
 (s/defn find-by-id :- (s/maybe models.activity/Activity)
   [activity-id :- s/Int
-   persistency :- components.persistency/IPersistency]
+   persistency]
   (let [storage (get-storage persistency)
         activities @storage]
     (get activities activity-id)))
 
 (s/defn find-all :- [models.activity/Activity]
-  [persistency :- components.persistency/IPersistency]
+  [persistency]
   (let [storage (get-storage persistency)
         activities @storage]
     (->> activities
@@ -52,7 +52,7 @@
 
 (s/defn save! :- models.activity/Activity
   [activity :- models.activity/Activity
-   persistency :- components.persistency/IPersistency]
+   persistency]
   (let [storage (get-storage persistency)
         now (Instant/now)
         activity-with-timestamps (cond-> activity
@@ -69,7 +69,7 @@
 
 (s/defn delete! :- s/Bool
   [activity-id :- s/Int
-   persistency :- components.persistency/IPersistency]
+   persistency]
   (let [storage (get-storage persistency)
         exists? (contains? @storage activity-id)]
     (when exists?

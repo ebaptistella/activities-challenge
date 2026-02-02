@@ -1,30 +1,29 @@
 (ns challenge.controllers.activity
-  (:require [challenge.components.persistency :as components.persistency]
-            [challenge.infrastructure.persistency.activity :as persistency.activity]
+  (:require [challenge.infrastructure.persistency.activity :as persistency.activity]
             [challenge.logic.activity :as logic.activity]
             [challenge.models.activity :as models.activity]
             [schema.core :as s]))
 
 (s/defn create-activity! :- models.activity/Activity
   [activity-data :- models.activity/Activity
-   persistency :- components.persistency/IPersistency]
+   persistency]
   (let [current-date (java.time.LocalDate/now)
         validated-activity (logic.activity/validate-activity activity-data current-date)]
     (persistency.activity/save! validated-activity persistency)))
 
 (s/defn get-activity :- (s/maybe models.activity/Activity)
   [activity-id :- s/Int
-   persistency :- components.persistency/IPersistency]
+   persistency]
   (persistency.activity/find-by-id activity-id persistency))
 
 (s/defn list-activities :- [models.activity/Activity]
-  [persistency :- components.persistency/IPersistency]
+  [persistency]
   (persistency.activity/find-all persistency))
 
 (s/defn update-activity! :- models.activity/Activity
   [activity-id :- s/Int
    updates :- {s/Keyword s/Any}
-   persistency :- components.persistency/IPersistency]
+   persistency]
   (let [existing-activity (persistency.activity/find-by-id activity-id persistency)]
     (when (nil? existing-activity)
       (throw (ex-info "Activity not found" {:activity-id activity-id})))
@@ -40,7 +39,7 @@
 
 (s/defn delete-activity! :- s/Bool
   [activity-id :- s/Int
-   persistency :- components.persistency/IPersistency]
+   persistency]
   (let [existing-activity (persistency.activity/find-by-id activity-id persistency)]
     (when (nil? existing-activity)
       (throw (ex-info "Activity not found" {:activity-id activity-id})))

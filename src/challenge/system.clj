@@ -27,7 +27,7 @@
                   [:config :logger])
     :pedestal (component/using
                (components.pedestal/new-pedestal server-config)
-               [:config :logger]))))
+               [:config :logger :persistency]))))
 
 (defn new-dev-system
   []

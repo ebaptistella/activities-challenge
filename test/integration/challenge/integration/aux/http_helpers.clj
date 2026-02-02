@@ -25,18 +25,21 @@
           ;; service-fn is created by http/create-server and should be in the config
           ;; After http/start, the service-fn is available at ::http/service-fn
               service-fn (::http/service-fn server-config)
-              request-opts (cond-> {}
-                             body
-                             (assoc :body (if (string? body)
-                                            body
-                                            (json/generate-string body))
-                                    :headers (merge {"Content-Type" "application/json"}
-                                                    (or headers {})))
-                             (and headers (not body))
-                             (assoc :headers headers))
-              response (if (empty? request-opts)
-                         (pedestal-test/response-for service-fn method path)
-                         (pedestal-test/response-for service-fn method path request-opts))
+              body-str (when body
+                         (if (string? body)
+                           body
+                           (json/generate-string body)))
+              request-headers (cond-> {}
+                                body-str
+                                (merge {"Content-Type" "application/json"})
+                                headers
+                                (merge headers))
+              response (apply pedestal-test/response-for
+                              (cond-> [service-fn method path]
+                                body-str
+                                (conj :body body-str)
+                                (seq request-headers)
+                                (conj :headers request-headers)))
               response-body (try
                               (if (and (string? (:body response))
                                        (or (nil? (get-in response [:headers "Content-Type"]))
