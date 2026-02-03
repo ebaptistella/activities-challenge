@@ -97,6 +97,23 @@
     ;; unit tests after integration tests in the same JVM session.
     ))
 
+(defn- initialize-schema-validation!
+  "Initializes the schema validation if schema.test is available.
+   This function is idempotent and can be called multiple times without problems.
+   
+   Returns true if the validation was initialized successfully, false otherwise."
+  []
+  (try
+    (when-not (find-ns 'schema.test)
+      (require 'schema.test))
+    (when-let [validate-fn (resolve 'schema.test/validate-schemas)]
+      (validate-fn)
+      true)
+    (catch Exception _
+      false)))
+
+(initialize-schema-validation!)
+
 (defmacro defflow
   "Defines a state-flow test with automatic system initialization and schema validation.
    
@@ -107,12 +124,18 @@
    
    The system is automatically initialized before the test and stopped after.
    Persistency functions are automatically mocked to use in-memory storage.
-   
-   This follows the pattern from ordnungsamt project:
-   https://github.com/nubank/ordnungsamt/blob/main/test/integration/integration/aux/init.clj"
+   Schema validation is automatically enabled when the namespace is loaded."
   [name & body]
-  `(flow/defflow ~name
-     {:init (init!)
-      :cleanup (cleanup!)
-      :fail-fast? true}
-     ~@body))
+  `(do
+     (try
+       (when-not (find-ns 'schema.test)
+         (require 'schema.test))
+       (when-let [validate-fn# (resolve 'schema.test/validate-schemas)]
+         (validate-fn#))
+       (catch Exception _# nil))
+
+     (flow/defflow ~name
+       {:init (init!)
+        :cleanup (cleanup!)
+        :fail-fast? true}
+       ~@body)))

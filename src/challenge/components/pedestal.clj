@@ -13,14 +13,18 @@
     (if server
       this
       (let [base-config (or server-config {})
+            ;; Preserve port 0 (random port for tests) if already set
+            base-port (::http/port base-config)
             final-config (if config
-                           (let [port (config.reader/http->port config)
-                                 host (config.reader/http->host config)
-                                 config-with-port (if port
-                                                    (assoc base-config ::http/port port)
+                           (let [config-port (config.reader/http->port config)
+                                 config-host (config.reader/http->host config)
+                                 ;; Only override port if base-config doesn't have port 0 (random port)
+                                 ;; Port 0 is used in tests to get a random available port
+                                 config-with-port (if (and config-port (not= 0 base-port))
+                                                    (assoc base-config ::http/port config-port)
                                                     base-config)]
-                             (if host
-                               (assoc config-with-port ::http/host host)
+                             (if config-host
+                               (assoc config-with-port ::http/host config-host)
                                config-with-port))
                            base-config)
             ;; Build the full system map from available components
@@ -34,30 +38,35 @@
                                        ::http/context {:system full-system-map})
             ;; Create an interceptor to inject context and components into request
             ;; Components are injected under :componentes key for easy destructuring
-            context-interceptor (interceptor/interceptor
-                                 {:name ::inject-context
-                                  :enter (fn [context]
-                                           (let [context-map (::http/context config-with-context)
-                                                 system-from-context (:system context-map)
-                                                 ;; Get components from the system
-                                                 persistency-comp (:persistency system-from-context)
-                                                 logger-comp (:logger system-from-context)
-                                                 config-comp (:config system-from-context)
-                                                 pedestal-comp (:pedestal system-from-context)]
-                                             (logger/log-call (logger/bound logger-comp)
-                                                              :debug
-                                                              "[Pedestal Interceptor] Injecting components | persistency: %s | logger: %s | config: %s"
-                                                              (some? persistency-comp)
-                                                              (some? logger-comp)
-                                                              (some? config-comp))
-                                             (-> context
-                                                 ;; Inject full context for backward compatibility
-                                                 (assoc-in [:request ::http/context] context-map)
-                                                 ;; Inject components under :componentes key
-                                                 (assoc-in [:request :componentes] {:persistency persistency-comp
-                                                                                    :logger logger-comp
-                                                                                    :config config-comp
-                                                                                    :pedestal pedestal-comp}))))})
+            ;; Capture full-system-map in closure to avoid accessing config-with-context
+            context-interceptor (let [captured-system full-system-map]
+                                  (interceptor/interceptor
+                                   {:name ::inject-context
+                                    :enter (fn [context]
+                                             (let [request (:request context)
+                                                   ;; Get system from request context (injected by Pedestal from config)
+                                                   ;; Fallback to captured system if not in request
+                                                   system-from-request (or (get-in request [::http/context :system])
+                                                                           captured-system)
+                                                   ;; Get components from the system
+                                                   persistency-comp (:persistency system-from-request)
+                                                   logger-comp (:logger system-from-request)
+                                                   config-comp (:config system-from-request)
+                                                   pedestal-comp (:pedestal system-from-request)]
+                                               (logger/log-call (logger/bound logger-comp)
+                                                                :debug
+                                                                "[Pedestal Interceptor] Injecting components | persistency: %s | logger: %s | config: %s"
+                                                                (some? persistency-comp)
+                                                                (some? logger-comp)
+                                                                (some? config-comp))
+                                               (-> context
+                                                   ;; Inject full context for backward compatibility
+                                                   (assoc-in [:request ::http/context] {:system system-from-request})
+                                                   ;; Inject components under :componentes key
+                                                   (assoc-in [:request :componentes] {:persistency persistency-comp
+                                                                                      :logger logger-comp
+                                                                                      :config config-comp
+                                                                                      :pedestal pedestal-comp}))))}))
             config-with-interceptors (-> config-with-context
                                          http/default-interceptors
                                          http/dev-interceptors
@@ -70,8 +79,26 @@
                                                             interceptors.validation/json-body
                                                             interceptors.validation/json-response
                                                             interceptors.validation/error-handler-interceptor]))))
-            server-config-map (http/create-server config-with-interceptors)
-            started-config (http/start server-config-map)
+            server-config-map (try
+                                (http/create-server config-with-interceptors)
+                                (catch Exception e
+                                  (let [log (logger/bound logger)]
+                                    (logger/log-call log :error
+                                                     "[Pedestal] Error creating server: %s | Exception: %s | Stack: %s"
+                                                     (.getMessage e)
+                                                     (pr-str e)
+                                                     (pr-str (take 10 (map str (.getStackTrace e)))))
+                                    (throw e))))
+            started-config (try
+                             (http/start server-config-map)
+                             (catch Exception e
+                               (let [log (logger/bound logger)]
+                                 (logger/log-call log :error
+                                                  "[Pedestal] Error starting server: %s | Exception: %s | Stack: %s"
+                                                  (.getMessage e)
+                                                  (pr-str e)
+                                                  (pr-str (take 10 (map str (.getStackTrace e)))))
+                                 (throw e))))
             jetty-instance (::http/server started-config)]
         (let [routes (::http/routes final-config)
               route-count (if (map? routes)
