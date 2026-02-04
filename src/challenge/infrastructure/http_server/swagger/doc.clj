@@ -28,24 +28,26 @@
 
 (defn extract-route-docs
   [routes]
-  (reduce (fn [acc route]
-            (let [{:keys [path method route-map]} (parse-route route)
-                  route-name (:route-name route-map)]
-              (if (and route-name
-                       (not= route-name :swagger-json)
-                       (not= route-name :swagger-ui)
-                       (not= route-name :swagger-ui-slash))
-                (assoc acc route-name
-                       {:path path
-                        :method method
-                        :summary (:summary route-map)
-                        :description (:doc route-map)
-                        :responses (:responses route-map)
-                        :request-body (:request-body route-map)
-                        :parameters (:parameters route-map)})
-                acc)))
-          {}
-          routes))
+  (let [excluded-routes #{:swagger-json
+                          :swagger-ui
+                          :swagger-ui-slash
+                          :home}]
+    (reduce (fn [acc route]
+              (let [{:keys [path method route-map]} (parse-route route)
+                    route-name (:route-name route-map)]
+                (if (and route-name
+                         (not (contains? excluded-routes route-name)))
+                  (assoc acc route-name
+                         {:path path
+                          :method method
+                          :summary (:summary route-map)
+                          :description (:doc route-map)
+                          :responses (:responses route-map)
+                          :request-body (:request-body route-map)
+                          :parameters (:parameters route-map)})
+                  acc)))
+            {}
+            routes)))
 
 (defn clean-routes-for-pedestal
   [routes]
