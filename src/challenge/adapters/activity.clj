@@ -3,6 +3,8 @@
             [challenge.wire.in.activity :as wire.in.activity]
             [challenge.wire.out.activity :as wire.out.activity]
             [challenge.wire.persistency.activity :as wire.persistency.activity]
+            [challenge.adapters.common.date :as date]
+            [challenge.adapters.common.keyword :as keyword]
             [schema.core :as s])
   (:import [java.time LocalDate]))
 
@@ -20,8 +22,6 @@
    :updated-at nil})
 
 (s/defn update-wire->model
-  "Converts update wire request to a map of updates (only non-nil fields).
-   Returns a map suitable for passing to update-activity! controller."
   [{:keys [date activity activity-type unit amount-planned amount-executed]}]
   (into {}
         (remove (comp nil? second)
@@ -58,19 +58,24 @@
                  :activity/created-at (:created-at activity)
                  :activity/updated-at (:updated-at activity)})))
 
+(defn model->db
+  [activity]
+  (let [persistency-wire (model->persistency activity)
+        with-timestamps (date/convert-instants-to-timestamps persistency-wire)
+        db-data (keyword/convert-keys-to-db-format with-timestamps)]
+    db-data))
+
 (s/defn persistency->model :- models.activity/Activity
-  "Converts database result to Activity model.
-   Accepts both namespaced keys (from schema) and non-namespaced keys (from database)."
   [db-result]
-  (let [id (or (:activity/id db-result) (:id db-result))
-        date (or (:activity/date db-result) (:date db-result))
-        activity (or (:activity/activity db-result) (:activity db-result))
-        activity-type (or (:activity/activity-type db-result) (:activity_type db-result))
-        unit (or (:activity/unit db-result) (:unit db-result))
-        amount-planned (or (:activity/amount-planned db-result) (:amount_planned db-result))
-        amount-executed (or (:activity/amount-executed db-result) (:amount_executed db-result))
-        created-at (or (:activity/created-at db-result) (:created_at db-result))
-        updated-at (or (:activity/updated-at db-result) (:updated_at db-result))]
+  (let [id (or (:activity/id db-result) (:id db-result) (get db-result "id"))
+        date (or (:activity/date db-result) (:date db-result) (get db-result "date"))
+        activity (or (:activity/activity db-result) (:activity db-result) (get db-result "activity"))
+        activity-type (or (:activity/activity-type db-result) (:activity/activity_type db-result) (:activity_type db-result) (get db-result "activity_type"))
+        unit (or (:activity/unit db-result) (:unit db-result) (get db-result "unit"))
+        amount-planned (or (:activity/amount-planned db-result) (:activity/amount_planned db-result) (:amount_planned db-result) (get db-result "amount_planned"))
+        amount-executed (or (:activity/amount-executed db-result) (:activity/amount_executed db-result) (:amount_executed db-result) (get db-result "amount_executed"))
+        created-at (or (:activity/created-at db-result) (:activity/created_at db-result) (:created_at db-result) (get db-result "created_at"))
+        updated-at (or (:activity/updated-at db-result) (:activity/updated_at db-result) (:updated_at db-result) (get db-result "updated_at"))]
     {:id id
      :date (when-let [d date]
              (if (instance? java.sql.Date d)
