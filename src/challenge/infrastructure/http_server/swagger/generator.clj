@@ -1,5 +1,6 @@
 (ns challenge.infrastructure.http-server.swagger.generator
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [schema.core :as s]))
 
 (defn- extract-key-name
   [k]
@@ -13,41 +14,100 @@
     :else
     (str k)))
 
-(defn- schema-to-json-schema
+(defn- prismatic-type-to-json-type
   [schema]
   (cond
-    ;; Schemas do Prismatic Schema são classes Java
+    (= schema s/Str) {:type "string"}
+    (= schema s/Int) {:type "integer"}
+    (= schema s/Num) {:type "number"}
+    (= schema s/Bool) {:type "boolean"}
     (= schema java.lang.String) {:type "string"}
     (= schema java.lang.Integer) {:type "integer"}
     (= schema java.lang.Long) {:type "integer"}
     (= schema java.lang.Double) {:type "number"}
     (= schema java.lang.Float) {:type "number"}
     (= schema java.lang.Boolean) {:type "boolean"}
-    ;; Maybe schemas
-    (and (list? schema) (= (first schema) 'maybe))
-    (assoc (schema-to-json-schema (second schema)) :nullable true)
-    ;; Arrays
-    (and (vector? schema) (= 1 (count schema)))
-    {:type "array"
-     :items (schema-to-json-schema (first schema))}
-    ;; Mapas/objetos - assumimos que é um schema do Prismatic
-    (map? schema)
-    (let [properties (reduce-kv
-                      (fn [acc k v]
-                        (let [key-name (extract-key-name k)
-                              prop-schema (schema-to-json-schema v)]
-                          (assoc acc key-name prop-schema)))
-                      {}
-                      schema)
-          required (vec (keep (fn [[k _v]]
-                                (when-not (instance? schema.core.OptionalKey k)
-                                  (extract-key-name k)))
-                              schema))]
-      (cond-> {:type "object"
-               :properties properties}
-        (seq required) (assoc :required required)))
-    ;; Default: objeto genérico
-    :else {:type "object" :description "Schema type not fully specified"}))
+    :else nil))
+
+(defn- is-maybe-schema?
+  [schema]
+  (try
+    (or
+     (and (seq? schema)
+          (>= (count schema) 2)
+          (= (first schema) s/maybe))
+     (instance? schema.core.Maybe schema))
+    (catch Exception _ false)))
+
+(defn- extract-maybe-schema
+  [schema]
+  (try
+    (cond
+      (and (seq? schema) (= (first schema) s/maybe))
+      (second schema)
+      (instance? schema.core.Maybe schema)
+      (.schema ^schema.core.Maybe schema)
+      :else nil)
+    (catch Exception _ nil)))
+
+(defn- schema-to-json-schema
+  [schema]
+  (let [json-type-result (prismatic-type-to-json-type schema)]
+    (cond
+      (is-maybe-schema? schema)
+      (let [inner-schema (extract-maybe-schema schema)]
+        (if inner-schema
+          (let [inner-json (schema-to-json-schema inner-schema)]
+            (-> inner-json
+                (dissoc :example)
+                (assoc :nullable true)))
+          {:type "object" :nullable true}))
+      (some? json-type-result)
+      json-type-result
+      (and (vector? schema) (= 1 (count schema)))
+      {:type "array"
+       :items (schema-to-json-schema (first schema))}
+      (map? schema)
+      (let [is-serialized-schema (and (= 1 (count schema))
+                                      (contains? schema :schema)
+                                      (not (contains? schema :type)))]
+        (if is-serialized-schema
+          (schema-to-json-schema (:schema schema))
+          (let [properties (reduce-kv
+                            (fn [acc k v]
+                              (let [key-name (extract-key-name k)
+                                    prop-schema (schema-to-json-schema v)
+                                    prop-with-example (cond-> prop-schema
+                                                        (and (= key-name "date")
+                                                             (= (:type prop-schema) "string"))
+                                                        (assoc :example "2024-01-15")
+                                                        (and (= key-name "activity")
+                                                             (= (:type prop-schema) "string"))
+                                                        (assoc :example "Example activity")
+                                                        (and (= key-name "activity-type")
+                                                             (= (:type prop-schema) "string"))
+                                                        (assoc :example "type1")
+                                                        (and (= key-name "unit")
+                                                             (= (:type prop-schema) "string"))
+                                                        (assoc :example "kg")
+                                                        (and (contains? #{"amount-planned" "amount-executed"} key-name)
+                                                             (= (:type prop-schema) "number")
+                                                             (not (:nullable prop-schema)))
+                                                        (assoc :example 0.0)
+                                                        (and (contains? #{"amount-planned" "amount-executed"} key-name)
+                                                             (:nullable prop-schema))
+                                                        (dissoc :example))]
+                                (assoc acc key-name prop-with-example)))
+                            {}
+                            schema)
+                required (vec (keep (fn [[k _v]]
+                                      (when-not (instance? schema.core.OptionalKey k)
+                                        (extract-key-name k)))
+                                    schema))]
+            (cond-> {:type "object"
+                     :properties properties}
+              (seq required) (assoc :required required)))))
+      :else {:type "object" :description "Schema type not fully specified"})))
 
 (defn- response-schema-to-openapi
   [response-schema]
@@ -124,7 +184,6 @@
                (fn [acc _route-name route-doc]
                  (let [path (:path route-doc)
                        openapi-path (route-doc-to-openapi-path route-doc)
-                       ;; Converte :id para {id} para OpenAPI
                        openapi-path-str (clojure.string/replace path #":(\w+)" "{$1}")]
                    (update acc openapi-path-str merge openapi-path)))
                {}
