@@ -1,49 +1,18 @@
 (ns challenge.handlers.http-server
-  (:require [challenge.infrastructure.http-server.activity :as http-server.activity]
-            [challenge.infrastructure.http-server.health :as http-server.health]
-            [challenge.interceptors.validation :as interceptors.validation]
-            [challenge.wire.in.activity :as wire.in.activity]
+  (:require [challenge.handlers.routes.activity :as routes.activity]
+            [challenge.handlers.routes.health :as routes.health]
+            [challenge.handlers.routes.swagger :as routes.swagger]
             [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]))
 
+(defn- combine-routes
+  []
+  (set (concat routes.health/routes
+               routes.activity/routes
+               routes.swagger/routes)))
+
 (def routes
-  (route/expand-routes
-   #{["/health"
-      :get
-      http-server.health/health-check
-      :route-name :health-check]
-
-     ["/activities"
-      :post
-      [interceptors.validation/json-body
-       (interceptors.validation/validate-request-body wire.in.activity/ActivityRequest :activity-wire)
-       http-server.activity/create-activity-handler]
-      :route-name :create-activity]
-
-     ["/activities"
-      :get
-      http-server.activity/list-activities-handler
-      :route-name :list-activities]
-
-     ["/activities/:id"
-      :get
-      [interceptors.validation/validate-path-params-id
-       http-server.activity/get-activity-handler]
-      :route-name :get-activity]
-
-     ["/activities/:id"
-      :put
-      [interceptors.validation/json-body
-       (interceptors.validation/validate-request-body wire.in.activity/ActivityUpdateRequest :activity-wire)
-       interceptors.validation/validate-path-params-id
-       http-server.activity/update-activity-handler]
-      :route-name :update-activity]
-
-     ["/activities/:id"
-      :delete
-      [interceptors.validation/validate-path-params-id
-       http-server.activity/delete-activity-handler]
-      :route-name :delete-activity]}))
+  (route/expand-routes (combine-routes)))
 
 (def server-config
   (merge {::http/type :jetty
