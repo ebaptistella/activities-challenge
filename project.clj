@@ -4,6 +4,7 @@
   :license {:name "MIT"
             :url "https://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.12.2"]
+                 [org.clojure/clojurescript "1.11.60"]
                  [com.stuartsierra/component "1.1.0"]
                  [org.postgresql/postgresql "42.7.3"]
                  [com.github.seancorfield/next.jdbc "1.3.981"]
@@ -17,13 +18,15 @@
                  [prismatic/schema "1.4.1"]
                  [cheshire "5.11.0"]
                  [com.zaxxer/HikariCP "5.1.0"]
-                 [clj-schema "0.5.1"]]
+                 [clj-schema "0.5.1"]
+                 [reagent "1.2.0"]]
   :plugins [[com.github.clj-kondo/lein-clj-kondo "0.2.5"]
             [com.github.clojure-lsp/lein-clojure-lsp "2.0.13"]
             [lein-cljfmt "0.8.2"]
-            [lein-nsorg "0.3.0"]]
+            [lein-nsorg "0.3.0"]
+            [lein-cljsbuild "1.1.8"]]
   :clojure-lsp {:settings {:clean {:ns-inner-blocks-indentation :same-line}}}
-  :source-paths ["src"]
+  :source-paths ["src" "src/challenge/backend"]
   :test-paths ["test/unit" "test/integration"]
   :resource-paths ["resources"]
   :main challenge.main
@@ -31,15 +34,39 @@
   :migratus {:store :database
              :migration-dir "resources/migrations"
              :db {:connection-uri (System/getenv "DATABASE_URL")}}
-  :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "challenge.main/-main"]}
-                   :dependencies [[io.pedestal/pedestal.service-tools "0.5.8"]
+  :cljsbuild {:builds {:app {:source-paths ["src/challenge/frontend"]
+                             :compiler {:output-to "resources/public/js/app.js"
+                                        :output-dir "resources/public/js/out"
+                                        :asset-path "/js/out"
+                                        :main challenge.ui.core
+                                        :optimizations :none
+                                        :source-map true
+                                        :pretty-print true
+                                        :verbose true}}
+                       :prod {:source-paths ["src/challenge/frontend"]
+                              :compiler {:output-to "resources/public/js/app.js"
+                                         :output-dir "resources/public/js/out-prod"
+                                         :asset-path "/js/out-prod"
+                                         :main challenge.ui.core
+                                         :optimizations :advanced
+                                         :source-map "resources/public/js/app.js.map"
+                                         :pretty-print false
+                                         :closure-defines {goog.DEBUG false}}}}}
+  :profiles {:dev {:dependencies [[io.pedestal/pedestal.service-tools "0.5.8"]
                                   [nubank/matcher-combinators "3.8.3"]
                                   [nubank/mockfn "0.7.0"]
                                   [nubank/state-flow "5.20.0"]]}
              :repl-auto {:repl-options {:init-ns challenge.repl}}}
   :aliases {:repl ["with-profile" "+dev" "repl"]
             :repl-auto ["with-profile" "+dev,+repl-auto" "repl"]
+            :run-dev ["trampoline" "run" "-m" "challenge.main/-main"]
+            :build ["do" ["clean"] ["cljsbuild" "once" "app"] ["uberjar"]]
+            :build-prod ["do" ["clean"] ["cljsbuild" "once" "prod"] ["uberjar"]]
             :uberjar-all ["do" ["clean"] ["cljsbuild" "once" "app"] ["uberjar"]]
+            ;; Comandos lein-cljsbuild úteis
+            :cljs-watch ["cljsbuild" "auto" "app"]
+            :cljs-once ["cljsbuild" "once" "app"]
+            :cljs-clean ["cljsbuild" "clean"]
             ;; clojure-lsp commands
             :clean-ns ["clojure-lsp" "clean-ns" "--dry"]
             :format ["clojure-lsp" "format" "--dry"]

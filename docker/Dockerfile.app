@@ -20,6 +20,11 @@ RUN --mount=type=cache,target=/root/.m2/repository \
     --mount=type=cache,target=/root/.lein \
     lein test
 
+# Build ClojureScript before uberjar
+RUN --mount=type=cache,target=/root/.m2/repository \
+    --mount=type=cache,target=/root/.lein \
+    lein cljsbuild once app
+
 RUN --mount=type=cache,target=/root/.m2/repository \
     --mount=type=cache,target=/root/.lein \
     lein uberjar

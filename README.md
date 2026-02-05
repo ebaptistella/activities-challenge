@@ -2,7 +2,7 @@
 
 ## What
 
-This project is a web system for managing and comparing planned and executed activities. The system allows:
+This project is a **monolithic web application** for managing and comparing planned and executed activities. The system allows:
 
 - **CSV file upload** with planned activities (`*_planned.csv`) and executed activities (`*_executed.csv`)
 - **Persistent storage** of activities in PostgreSQL database
@@ -12,11 +12,17 @@ This project is a web system for managing and comparing planned and executed act
 
 The system was developed as a technical challenge, focusing on clean architecture, extensibility, and development best practices.
 
+**Architecture**: Monolith with clear separation between backend (Clojure/Pedestal) and frontend (ClojureScript/Reagent) within `src/challenge/`. Both are managed by a single `project.clj` file.
+
 ## How
 
 ### Architecture
 
-The system follows a **Hexagonal Architecture ** inspired by Nubank practices, organized into two main layers:
+The system follows a **Hexagonal Architecture** inspired by Nubank practices, with clear separation between backend and frontend:
+
+#### Backend Architecture
+
+The backend is organized into two main layers:
 
 1. **Domain Layer**
    - `logic/`: Pure business logic (pure functions, no side effects, no I/O)
@@ -28,6 +34,15 @@ The system follows a **Hexagonal Architecture ** inspired by Nubank practices, o
    - `interceptors/`: Pedestal interceptors (validation, logging, component injection)
    - `adapters/`: Data transformation between wire schemas and models
    - `wire/`: Schemas for external communication (in/out/persistency)
+
+#### Frontend Architecture
+
+The frontend is a **ClojureScript/Reagent** application organized under `src/challenge/frontend/ui/`:
+
+- **Components**: Reagent components organized by feature
+- **State Management**: Reactive state with `reagent/atom`
+- **HTTP Client**: Communication with backend API via `fetch`
+- **Models & Logic**: Frontend-specific data models and business logic
 
 ### Data Flow
 
@@ -44,23 +59,26 @@ Upload CSV → Parser → Validation → Database
 
 #### Activity Query
 ```
-Filters → DB Query → Enrichment → JSON Response
+Frontend Filters → HTTP Request → Backend Query → DB Query → Enrichment → JSON Response → Frontend Display
 ```
 
-1. User applies filters (date, activity, type)
-2. Backend queries database with filters
-3. Activities are enriched with `kind` calculation (planned/executed)
-4. When both values are present, "executed" takes priority
-5. JSON response is formatted and sent to frontend
+1. User applies filters (date, activity, type) in the web interface
+2. Frontend sends HTTP request to backend API
+3. Backend queries database with filters
+4. Activities are enriched with `kind` calculation (planned/executed)
+5. When both values are present, "executed" takes priority
+6. JSON response is formatted and sent to frontend
+7. Frontend displays results in the UI
 
 ### Frontend
 
-The frontend is built with **ClojureScript** and **Reagent** (React wrapper):
+The frontend is built with **ClojureScript** and **Reagent** (React wrapper), located in `src/challenge/frontend/ui/`:
 
-- **Reactive state** managed with `reagent/atom`
-- **Functional components** organized by responsibility
-- **HTTP communication** via `fetch` API
-- **Modern UI** with Tailwind CSS
+- **Reactive State**: Managed with `reagent/atom` for component state
+- **Functional Components**: Organized by responsibility (activities, filters, upload)
+- **HTTP Communication**: Via `fetch` API to backend REST endpoints
+- **Modern UI**: Styled with Tailwind CSS
+- **Build System**: Compiled with `lein-cljsbuild` to `resources/public/js/`
 
 ## Core Concepts
 
@@ -148,13 +166,25 @@ The system uses **Prismatic Schema** with automatic validation:
 ### Development
 
 ```bash
-# Install dependencies
+# Install dependencies (includes ClojureScript and Reagent)
 lein deps
 
-# Compile ClojureScript
+# Run application (backend only - compile frontend separately)
+lein run-dev
+
+# For full development (backend + frontend):
+# Terminal 1: Backend (REPL or server)
+lein repl :repl-auto
+# or
+lein run-dev
+
+# Terminal 2: Frontend watch mode (auto-recompiles on file changes)
+lein cljsbuild auto app
+
+# Compile ClojureScript once (without watch)
 lein cljsbuild once app
 
-# Run application locally
+# Run application locally (after compiling frontend)
 lein run
 
 # Start REPL
@@ -224,20 +254,37 @@ lein check-all
 ### Build and Deploy
 
 ```bash
-# Clean artifacts
+# Full build (compiles ClojureScript + creates uberjar)
+lein build
+
+# Production build (optimized ClojureScript with advanced optimizations)
+lein build-prod
+
+# Manual build steps:
+# 1. Compile ClojureScript for development
+lein cljsbuild once app
+
+# 2. Compile ClojureScript for production (optimized)
+lein cljsbuild once prod
+
+# 3. Create uberjar (includes compiled frontend assets)
+lein uberjar
+
+# Clean build artifacts
 lein clean
 
-# Clean everything (including ClojureScript)
-lein clean-all
+# Clean ClojureScript build output
+lein cljsbuild clean
 
-# Compile ClojureScript and generate uberjar
-lein uberjar-all
-
-# Generate standalone uberjar
-lein uberjar
+# Useful ClojureScript commands:
+lein cljs-watch    # Watch mode (auto-recompile)
+lein cljs-once     # Compile once
+lein cljs-clean    # Clean build output
 ```
 
 ### Docker
+
+The Docker build process automatically compiles ClojureScript before creating the uberjar:
 
 ```bash
 # Build and start services (PostgreSQL + App)
@@ -256,6 +303,8 @@ docker-compose logs -f app
 # Run database only
 docker-compose up postgres
 ```
+
+**Note**: The Dockerfile compiles ClojureScript (`lein cljsbuild once app`) before creating the uberjar, ensuring the frontend is included in the final artifact.
 
 ### Database
 
@@ -307,26 +356,40 @@ lein test challenge.integration
 volis-challenge/
 ├── src/
 │   └── challenge/
-│       ├── adapters/          # Wire ↔ model transformation
-│       ├── components/        # System components (Pedestal, Logger, DB, etc)
-│       ├── config/            # Configuration reading
-│       ├── controllers/       # Orchestration (Logic Sandwich)
-│       ├── handlers/          # HTTP route definitions
-│       ├── infrastructure/   # External implementations
-│       │   ├── http_server/   # HTTP handlers 
-│       │   └── persistency/   # Database operations
-│       ├── interceptors/     # Pedestal interceptors (validation, logging)
-│       ├── interface/        # HTTP interfaces (response helpers)
-│       ├── logic/            # Pure business logic (domain layer)
-│       ├── models/           # Domain models (strict schemas)
-│       ├── schema/           # Schema creation helpers
-│       ├── wire/             # External communication schemas
-│       │   ├── in/           # Input schemas (loose)
-│       │   ├── out/          # Output schemas (strict)
-│       │   └── persistency/  # Database schemas (strict, namespaced)
-│       ├── main.clj          # Application entry point
-│       ├── repl.clj          # REPL development utilities
-│       └── system.clj        # Component system definition
+│       ├── backend/          # Backend: Clojure code (.clj files)
+│       │   ├── adapters/     # Wire ↔ model transformation
+│       │   ├── components/   # System components (Pedestal, Logger, DB, etc)
+│       │   ├── config/       # Configuration reading
+│       │   ├── controllers/  # Orchestration (Logic Sandwich)
+│       │   ├── handlers/     # HTTP route definitions
+│       │   ├── infrastructure/ # External implementations
+│       │   │   ├── http_server/ # HTTP handlers 
+│       │   │   └── persistency/ # Database operations
+│       │   ├── interceptors/  # Pedestal interceptors (validation, logging)
+│       │   ├── interface/    # HTTP interfaces (response helpers)
+│       │   │   └── http/
+│       │   ├── logic/        # Pure business logic (domain layer)
+│       │   ├── models/       # Domain models (strict schemas)
+│       │   ├── schema/       # Schema creation helpers
+│       │   ├── wire/         # External communication schemas
+│       │   │   ├── in/       # Input schemas (loose)
+│       │   │   ├── out/      # Output schemas (strict)
+│       │   │   └── persistency/ # Database schemas (strict, namespaced)
+│       │   ├── main.clj      # Application entry point
+│       │   ├── migrate.clj   # Migration utilities
+│       │   ├── repl.clj      # REPL development utilities
+│       │   └── system.clj   # Component system definition
+│       └── frontend/         # Frontend: ClojureScript/Reagent application
+│           └── ui/
+│               ├── adapters.cljs
+│               ├── components/   # Reagent components
+│               │   ├── activities.cljs
+│               │   ├── filters.cljs
+│               │   └── upload.cljs
+│               ├── core.cljs     # Main application entry
+│               ├── http_client.cljs
+│               ├── logic.cljs
+│               └── models.cljs
 ├── test/
 │   ├── integration/          # Integration tests
 │   │   └── challenge/
@@ -344,6 +407,10 @@ volis-challenge/
 │   ├── config/               # Application configuration
 │   │   └── application.edn
 │   └── public/              # Static assets
+│       ├── index.html
+│       ├── swagger-ui.html
+│       └── js/               # Compiled ClojureScript output
+├── project.clj               # Single project.clj (monolith)
 └── docker/                   # Docker configuration
 ```
 
@@ -399,22 +466,33 @@ kill -9 $(lsof -t -i:3000)
 
 ### Important Notes
 
+- **Monolith Structure**: Single `project.clj` manages both backend (Clojure) and frontend (ClojureScript). Backend code is in `src/challenge/backend/` and frontend code is in `src/challenge/frontend/ui/`. The `project.clj` includes both `src` and `src/challenge/backend` in source-paths to maintain `challenge.*` namespaces.
+- **Build Order**: For production builds, ClojureScript must be compiled before creating the uberjar. Use `lein build` or `lein build-prod` to handle this automatically.
+- **Development Workflow**: For full development, run backend and frontend watch mode in separate terminals. Frontend watch mode (`lein cljsbuild auto app`) automatically recompiles on file changes.
 - **Port 0 in Tests**: Integration tests use port 0 (random) to avoid conflicts. The system preserves this configuration even when there is a configuration file.
 - **Auto-initialization**: When loading test namespaces in the REPL, dependencies (such as `schema.test`) are automatically initialized.
 - **Mock Components**: Integration tests use mocked components, do not require a real database.
 
 ## Main Technologies
 
-- **Backend**: Clojure 1.12.2
+### Backend
+- **Language**: Clojure 1.12.2
 - **HTTP Server**: Pedestal 0.5.8 (with Jetty)
 - **Database**: PostgreSQL (via next.jdbc)
 - **Component System**: Component (Stuart Sierra) 1.1.0
 - **Schema Validation**: Prismatic Schema 1.4.1 + clj-schema 0.5.1
 - **Migrations**: Migratus 1.4.5
-- **Testing**: 
-  - `clojure.test` (unit tests)
-  - `state-flow` 5.20.0 (integration tests)
-  - `matcher-combinators` 3.8.3 (assertions)
-  - `mockfn` 0.7.0 (mocking)
 - **JSON**: Cheshire 5.11.0
 - **Logging**: Logback Classic 1.2.3
+
+### Frontend
+- **Language**: ClojureScript 1.11.60
+- **UI Framework**: Reagent 1.2.0 (React wrapper)
+- **Build Tool**: lein-cljsbuild 1.1.8
+- **Compiler**: Google Closure Compiler (via ClojureScript)
+
+### Testing
+- **Unit Tests**: `clojure.test`
+- **Integration Tests**: `state-flow` 5.20.0
+- **Assertions**: `matcher-combinators` 3.8.3
+- **Mocking**: `mockfn` 0.7.0
