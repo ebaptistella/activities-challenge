@@ -38,7 +38,7 @@
              :migration-dir "resources/migrations"
              :db {:connection-uri (System/getenv "DATABASE_URL")}}
   :cljsbuild {:builds {:app {:source-paths ["src/challenge/frontend"]
-                             :compiler {:output-to "targetresources/public/js/app.js"
+                             :compiler {:output-to "target/resources/public/js/app.js"
                                         :output-dir "target/resources/public/js/out"
                                         :asset-path "target/resources/js/out"
                                         :main challenge.ui.core

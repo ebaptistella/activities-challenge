@@ -18,3 +18,5 @@ pom.xml.asc
 .env
 .env.local
 .clj-kondo/imports/
+resources/public/js/app.js
+resources/public/js/app.js.map
