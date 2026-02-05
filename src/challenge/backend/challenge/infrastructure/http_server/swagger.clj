@@ -1,7 +1,7 @@
 (ns challenge.infrastructure.http-server.swagger
-  (:require [challenge.infrastructure.http-server.swagger.doc :as swagger.doc]
+  (:require [challenge.infrastructure.http-server.static :as static]
+            [challenge.infrastructure.http-server.swagger.doc :as swagger.doc]
             [challenge.infrastructure.http-server.swagger.generator :as swagger.generator]
-            [challenge.infrastructure.http-server.static :as static]
             [challenge.interface.http.response :as response]))
 
 (defn create-swagger-json-handler

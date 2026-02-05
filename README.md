@@ -37,12 +37,14 @@ The backend is organized into two main layers:
 
 #### Frontend Architecture
 
-The frontend is a **ClojureScript/Reagent** application organized under `src/challenge/frontend/ui/`:
+The frontend is a **ClojureScript/Reagent** application organized under `src/challenge/frontend/challenge/ui/`:
 
 - **Components**: Reagent components organized by feature
 - **State Management**: Reactive state with `reagent/atom`
 - **HTTP Client**: Communication with backend API via `fetch`
 - **Models & Logic**: Frontend-specific data models and business logic
+
+The `challenge/ui/` path under the frontend source root ensures the namespace `challenge.ui.core` (and `challenge.ui.*`) matches the ClojureScript compiler’s file-to-namespace convention.
 
 ### Data Flow
 
@@ -72,13 +74,14 @@ Frontend Filters → HTTP Request → Backend Query → DB Query → Enrichment 
 
 ### Frontend
 
-The frontend is built with **ClojureScript** and **Reagent** (React wrapper), located in `src/challenge/frontend/ui/`:
+The frontend is built with **ClojureScript** and **Reagent** (React wrapper), located in `src/challenge/frontend/challenge/ui/`:
 
 - **Reactive State**: Managed with `reagent/atom` for component state
 - **Functional Components**: Organized by responsibility (activities, filters, upload)
 - **HTTP Communication**: Via `fetch` API to backend REST endpoints
 - **Modern UI**: Styled with Tailwind CSS
-- **Build System**: Compiled with `lein-cljsbuild` to `resources/public/js/`
+- **Build System**: Compiled with `lein-cljsbuild` to `resources/public/js/app.js` and `resources/public/js/out/`
+- **Dependencies**: React 18 (cljsjs/react, cljsjs/react-dom) for Reagent
 
 ## Core Concepts
 
@@ -179,10 +182,12 @@ lein repl :repl-auto
 lein run-dev
 
 # Terminal 2: Frontend watch mode (auto-recompiles on file changes)
-lein cljsbuild auto app
+lein cljs-watch
+# or: lein cljsbuild auto app
 
 # Compile ClojureScript once (without watch)
-lein cljsbuild once app
+lein cljs-once
+# or: lein cljsbuild once app
 
 # Run application locally (after compiling frontend)
 lein run
@@ -235,20 +240,23 @@ Tests can be executed directly in the REPL. Dependencies are automatically initi
 ### Linting and Formatting
 
 ```bash
-# Check linting
+# Run full lint (clean-ns, format, diagnostics, cljfmt, nsorg, kondo)
 lein lint
 
-# Fix linting
-lein lint-fix
+# Fix namespace organization
+lein clean-ns-fix
 
-# Check formatting
-lein format
-
-# Fix formatting automatically
+# Fix formatting
 lein format-fix
 
-# Check everything (formatting + linting)
-lein check-all
+# Check formatting (dry run)
+lein format
+
+# Check namespace organization (dry run)
+lein nsorg-check
+
+# Static analysis (clj-kondo)
+lein kondo
 ```
 
 ### Build and Deploy
@@ -262,7 +270,8 @@ lein build-prod
 
 # Manual build steps:
 # 1. Compile ClojureScript for development
-lein cljsbuild once app
+lein cljs-once
+# or: lein cljsbuild once app
 
 # 2. Compile ClojureScript for production (optimized)
 lein cljsbuild once prod
@@ -270,16 +279,12 @@ lein cljsbuild once prod
 # 3. Create uberjar (includes compiled frontend assets)
 lein uberjar
 
-# Clean build artifacts
+# Clean build artifacts (removes target/ and resources/public/js/)
 lein clean
 
-# Clean ClojureScript build output
-lein cljsbuild clean
-
-# Useful ClojureScript commands:
-lein cljs-watch    # Watch mode (auto-recompile)
-lein cljs-once     # Compile once
-lein cljs-clean    # Clean build output
+# Useful ClojureScript aliases:
+lein cljs-watch    # Watch mode (auto-recompile on file changes)
+lein cljs-once     # Compile once (development, :optimizations :none)
 ```
 
 ### Docker
@@ -357,39 +362,41 @@ volis-challenge/
 ├── src/
 │   └── challenge/
 │       ├── backend/          # Backend: Clojure code (.clj files)
-│       │   ├── adapters/     # Wire ↔ model transformation
-│       │   ├── components/   # System components (Pedestal, Logger, DB, etc)
-│       │   ├── config/       # Configuration reading
-│       │   ├── controllers/  # Orchestration (Logic Sandwich)
-│       │   ├── handlers/     # HTTP route definitions
-│       │   ├── infrastructure/ # External implementations
-│       │   │   ├── http_server/ # HTTP handlers 
-│       │   │   └── persistency/ # Database operations
-│       │   ├── interceptors/  # Pedestal interceptors (validation, logging)
-│       │   ├── interface/    # HTTP interfaces (response helpers)
-│       │   │   └── http/
-│       │   ├── logic/        # Pure business logic (domain layer)
-│       │   ├── models/       # Domain models (strict schemas)
-│       │   ├── schema/       # Schema creation helpers
-│       │   ├── wire/         # External communication schemas
-│       │   │   ├── in/       # Input schemas (loose)
-│       │   │   ├── out/      # Output schemas (strict)
-│       │   │   └── persistency/ # Database schemas (strict, namespaced)
-│       │   ├── main.clj      # Application entry point
-│       │   ├── migrate.clj   # Migration utilities
-│       │   ├── repl.clj      # REPL development utilities
-│       │   └── system.clj   # Component system definition
+│       │   └── challenge/    # Backend code (namespaces challenge.*)
+│       │       ├── adapters/     # Wire ↔ model transformation
+│       │       ├── components/   # System components (Pedestal, Logger, DB, etc)
+│       │       ├── config/       # Configuration reading
+│       │       ├── controllers/  # Orchestration (Logic Sandwich)
+│       │       ├── handlers/     # HTTP route definitions
+│       │       ├── infrastructure/ # External implementations
+│       │       │   ├── http_server/ # HTTP handlers 
+│       │       │   └── persistency/ # Database operations
+│       │       ├── interceptors/  # Pedestal interceptors (validation, logging)
+│       │       ├── interface/    # HTTP interfaces (response helpers)
+│       │       │   └── http/
+│       │       ├── logic/        # Pure business logic (domain layer)
+│       │       ├── models/       # Domain models (strict schemas)
+│       │       ├── schema/       # Schema creation helpers
+│       │       ├── wire/         # External communication schemas
+│       │       │   ├── in/       # Input schemas (loose)
+│       │       │   ├── out/      # Output schemas (strict)
+│       │       │   └── persistency/ # Database schemas (strict, namespaced)
+│       │       ├── main.clj      # Application entry point
+│       │       ├── migrate.clj   # Migration utilities
+│       │       ├── repl.clj      # REPL development utilities
+│       │       └── system.clj   # Component system definition
 │       └── frontend/         # Frontend: ClojureScript/Reagent application
-│           └── ui/
-│               ├── adapters.cljs
-│               ├── components/   # Reagent components
-│               │   ├── activities.cljs
-│               │   ├── filters.cljs
-│               │   └── upload.cljs
-│               ├── core.cljs     # Main application entry
-│               ├── http_client.cljs
-│               ├── logic.cljs
-│               └── models.cljs
+│           └── challenge/    # Namespace prefix (challenge.ui.*)
+│               └── ui/
+│                   ├── adapters.cljs
+│                   ├── components/   # Reagent components
+│                   │   ├── activities.cljs
+│                   │   ├── filters.cljs
+│                   │   └── upload.cljs
+│                   ├── core.cljs     # Main application entry (challenge.ui.core)
+│                   ├── http_client.cljs
+│                   ├── logic.cljs
+│                   └── models.cljs
 ├── test/
 │   ├── integration/          # Integration tests
 │   │   └── challenge/
@@ -409,7 +416,9 @@ volis-challenge/
 │   └── public/              # Static assets
 │       ├── index.html
 │       ├── swagger-ui.html
-│       └── js/               # Compiled ClojureScript output
+│       └── js/               # Compiled ClojureScript (lein cljs-once / cljs-watch)
+│           ├── app.js        # Bootstrap (loads from /js/out/)
+│           └── out/           # Development build output (:optimizations :none)
 ├── project.clj               # Single project.clj (monolith)
 └── docker/                   # Docker configuration
 ```
@@ -466,9 +475,9 @@ kill -9 $(lsof -t -i:3000)
 
 ### Important Notes
 
-- **Monolith Structure**: Single `project.clj` manages both backend (Clojure) and frontend (ClojureScript). Backend code is in `src/challenge/backend/` and frontend code is in `src/challenge/frontend/ui/`. The `project.clj` includes both `src` and `src/challenge/backend` in source-paths to maintain `challenge.*` namespaces.
+- **Monolith Structure**: Single `project.clj` manages both backend (Clojure) and frontend (ClojureScript). Backend code is in `src/challenge/backend/challenge/` and frontend code is in `src/challenge/frontend/challenge/ui/`. The backend uses `:source-paths ["src/challenge/backend"]`; the frontend uses `:cljsbuild` with `:source-paths ["src/challenge/frontend"]` and `:main challenge.ui.core`, so the path `challenge/ui/core.cljs` under that root is required for the compiler to find the entry namespace.
 - **Build Order**: For production builds, ClojureScript must be compiled before creating the uberjar. Use `lein build` or `lein build-prod` to handle this automatically.
-- **Development Workflow**: For full development, run backend and frontend watch mode in separate terminals. Frontend watch mode (`lein cljsbuild auto app`) automatically recompiles on file changes.
+- **Development Workflow**: For full development, run backend and frontend watch mode in separate terminals. Frontend watch mode (`lein cljs-watch` or `lein cljsbuild auto app`) automatically recompiles on file changes.
 - **Port 0 in Tests**: Integration tests use port 0 (random) to avoid conflicts. The system preserves this configuration even when there is a configuration file.
 - **Auto-initialization**: When loading test namespaces in the REPL, dependencies (such as `schema.test`) are automatically initialized.
 - **Mock Components**: Integration tests use mocked components, do not require a real database.
@@ -488,8 +497,10 @@ kill -9 $(lsof -t -i:3000)
 ### Frontend
 - **Language**: ClojureScript 1.11.60
 - **UI Framework**: Reagent 1.2.0 (React wrapper)
+- **React**: cljsjs/react 18.2.0-0, cljsjs/react-dom 18.2.0-0
 - **Build Tool**: lein-cljsbuild 1.1.8
 - **Compiler**: Google Closure Compiler (via ClojureScript)
+- **Output**: `resources/public/js/app.js` (bootstrap) and `resources/public/js/out/` (dev build)
 
 ### Testing
 - **Unit Tests**: `clojure.test`

@@ -24,5 +24,10 @@
 (def server-config
   (merge {::http/type :jetty
           ::http/routes routes
-          ::http/resource-path "/public"}
+          ::http/resource-path "/public"
+          ;; CSP that allows static script tags: 'self' (app.js) and Tailwind CDN.
+          ;; Pedestal default uses 'strict-dynamic', which blocks scripts not loaded by a trusted script.
+          ::http/secure-headers {:content-security-policy-settings
+                                 (str "object-src 'none'; "
+                                      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com;")}}
          {::http/join? false}))

@@ -1,6 +1,6 @@
 (ns challenge.adapters.common.date
-  (:import [java.time Instant]
-           [java.sql Timestamp]))
+  (:import [java.sql Timestamp]
+           [java.time Instant]))
 
 (defn instant->timestamp
   [instant]

@@ -1,10 +1,10 @@
 (ns challenge.adapters.activity
-  (:require [challenge.models.activity :as models.activity]
+  (:require [challenge.adapters.common.date :as date]
+            [challenge.adapters.common.keyword :as keyword]
+            [challenge.models.activity :as models.activity]
             [challenge.wire.in.activity :as wire.in.activity]
             [challenge.wire.out.activity :as wire.out.activity]
             [challenge.wire.persistency.activity :as wire.persistency.activity]
-            [challenge.adapters.common.date :as date]
-            [challenge.adapters.common.keyword :as keyword]
             [schema.core :as s])
   (:import [java.time LocalDate]))
 
