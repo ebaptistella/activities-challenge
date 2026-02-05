@@ -358,7 +358,7 @@ lein test challenge.integration
 ### Directory Structure
 
 ```
-volis-challenge/
+activities-challenge/
 ├── src/
 │   └── challenge/
 │       ├── backend/          # Backend: Clojure code (.clj files)
