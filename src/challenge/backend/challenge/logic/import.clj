@@ -15,28 +15,33 @@
       (catch NumberFormatException _ nil))))
 
 (s/defn ^:private  row->activity-request
-  "Maps a CSV row (vector) to a wire-style map for planned import.
-   Header order: Date, Activity, Activity type, Unit, Amount planned."
-  [row]
+  "Maps a CSV row (vector) to a wire-style map.
+   type: \"planned\" -> 5th column is Amount planned, amount-executed nil.
+   type: \"executed\" -> 5th column is Amount executed, amount-planned nil.
+   Header order: Date, Activity, Activity type, Unit, Amount planned|Amount executed."
+  [row type]
   (when (and row (>= (count row) 5))
-    (let [[date activity activity-type unit amount-planned] row]
+    (let [[date activity activity-type unit amount] row
+          amount-num (parse-number amount)
+          planned?   (= (string/lower-case (str type)) "planned")]
       {:date (string/trim (str date))
        :activity (string/trim (str activity))
        :activity-type (string/trim (str activity-type))
        :unit (string/trim (str unit))
-       :amount-planned (parse-number amount-planned)
-       :amount-executed nil})))
+       :amount-planned (when planned? amount-num)
+       :amount-executed (when (not planned?) amount-num)})))
 
 (s/defn parse-csv-rows
-  "Parses CSV string into a sequence of activity-request maps (planned format).
+  "Parses CSV string into a sequence of activity-request maps.
+   type: \"planned\" or \"executed\" determines whether 5th column maps to amount-planned or amount-executed.
    Skips header and empty rows. Returns lazy seq."
-  [csv-string]
+  [csv-string type]
   (when csv-string
     (let [reader (StringReader. csv-string)
           rows (csv/read-csv reader)
           data-rows (rest rows)]
       (->> data-rows
-           (map row->activity-request)
+           (map #(row->activity-request % type))
            (filter some?)))))
 
 (s/defn process-import-rows

@@ -7,7 +7,9 @@
             [challenge.infrastructure.http-server.swagger.doc :as swagger.doc]
             [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
-            [schema.core :as s]))
+            [schema.core :as s])
+  (:import [javax.servlet MultipartConfigElement]
+           [org.eclipse.jetty.servlet ServletContextHandler]))
 
 (s/defn ^:private  combine-routes
   []
@@ -24,6 +26,19 @@
 (def routes
   (route/expand-routes (swagger.doc/clean-routes-for-pedestal all-routes-with-docs)))
 
+(def ^:private multipart-config
+  "MultipartConfigElement: location, maxFileSize (10MB), maxRequestSize (10MB), fileSizeThreshold (0)."
+  (MultipartConfigElement. "" (long 10485760) (long 10485760) 0))
+
+(defn- context-configurator
+  "Configura multipart nos servlets do Jetty para que POST /api/v1/import aceite file upload."
+  [^ServletContextHandler context]
+  (let [servlet-handler (.getServletHandler context)
+        holders         (.getServlets servlet-handler)]
+    (doseq [holder holders]
+      (when-let [reg (.getRegistration holder)]
+        (.setMultipartConfig reg multipart-config)))))
+
 (def server-config
   (merge {::http/type :jetty
           ::http/routes routes
@@ -32,5 +47,6 @@
           ;; Pedestal default uses 'strict-dynamic', which blocks scripts not loaded by a trusted script.
           ::http/secure-headers {:content-security-policy-settings
                                  (str "object-src 'none'; "
-                                      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com;")}}
+                                      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com;")}
+          ::http/container-options {:context-configurator context-configurator}}
          {::http/join? false}))

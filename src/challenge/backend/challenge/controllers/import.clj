@@ -8,7 +8,7 @@
    ones to persistency. Returns {:type type :valid N :invalid M}."
   [csv-string type persistency]
   (let [current-date (java.time.LocalDate/now)
-        rows (logic.import/parse-csv-rows csv-string)
+        rows (logic.import/parse-csv-rows csv-string type)
         {:keys [valid invalid]} (logic.import/process-import-rows rows current-date)
         saved-count (count valid)]
     (doseq [activity valid]
