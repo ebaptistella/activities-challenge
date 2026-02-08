@@ -1,8 +1,8 @@
 (ns challenge.logic.activity-test
   (:require [challenge.logic.activity :as logic.activity]
             [clojure.test :refer [deftest is testing use-fixtures]]
-            [schema.test :refer [validate-schemas]]
-            [schema.core :as s])
+            [schema.core :as s]
+            [schema.test :refer [validate-schemas]])
   (:import [java.time LocalDate]))
 
 (use-fixtures :once validate-schemas)

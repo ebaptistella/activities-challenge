@@ -7,8 +7,8 @@
             [challenge.integration.aux.mock-persistency :as mock-persistency]
             [com.stuartsierra.component :as component]
             [io.pedestal.http :as http]
-            [state-flow.api :as flow]
-            [schema.core :as s]))
+            [schema.core :as s]
+            [state-flow.api :as flow]))
 
 ;; Atom to store the current mock persistency instance during test execution
 (def ^:private mock-persistency-instance (atom nil))

@@ -1,11 +1,11 @@
 (ns challenge.integration.activity-test
   (:require [challenge.integration.aux.http-helpers :as http-helpers]
             [challenge.integration.aux.init :refer [defflow]]
-            [clojure.test :refer [use-fixtures is]]
+            [clojure.test :refer [is use-fixtures]]
+            [schema.core :as s]
             [schema.test :refer [validate-schemas]]
             [state-flow.api :as flow :refer [flow return]]
-            [state-flow.assertions.matcher-combinators :refer [match?]]
-            [schema.core :as s]))
+            [state-flow.assertions.matcher-combinators :refer [match?]]))
 
 (use-fixtures :once validate-schemas)
 
