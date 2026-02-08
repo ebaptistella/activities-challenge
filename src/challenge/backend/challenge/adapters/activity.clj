@@ -58,7 +58,7 @@
                  :activity/created-at (:created-at activity)
                  :activity/updated-at (:updated-at activity)})))
 
-(defn model->db
+(s/defn model->db
   [activity]
   (let [persistency-wire (model->persistency activity)
         with-timestamps (date/convert-instants-to-timestamps persistency-wire)

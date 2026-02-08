@@ -4,7 +4,7 @@
    to Prismatic Schema definitions."
   (:require [schema.core :as s]))
 
-(defn strict-schema
+(s/defn strict-schema
   "Creates a strict schema from skeleton definition.
    Only allows keys defined in skeleton.
    Uses Prismatic Schema's optional-key for non-required fields."
@@ -19,7 +19,7 @@
    {}
    skeleton))
 
-(defn loose-schema
+(s/defn loose-schema
   "Creates a loose schema from skeleton definition.
    Allows extra keys not defined in skeleton.
    Uses Prismatic Schema's optional-key for non-required fields.

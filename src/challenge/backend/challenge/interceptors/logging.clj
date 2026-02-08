@@ -2,9 +2,10 @@
   (:require [challenge.components.logger :as logger]
             [challenge.interceptors.components :as interceptors.components]
             [cheshire.core :as json]
-            [io.pedestal.interceptor :as interceptor]))
+            [io.pedestal.interceptor :as interceptor]
+            [schema.core :as s]))
 
-(defn- sanitize-body
+(s/defn ^:private  sanitize-body
   "Sanitizes request/response body for logging (limits size, masks sensitive data).
    Handles various body types including InputStream, strings, maps, and other objects."
   [body max-size]
@@ -25,7 +26,7 @@
               (str (subs body-str 0 max-size) "... [truncated]")
               body-str))))
 
-(defn- log-request
+(s/defn ^:private  log-request
   "Logs incoming request details."
   [logger-comp request]
   (when logger-comp
@@ -46,7 +47,7 @@
                        "[Request] %s %s | Path-params: %s | Query-params: %s | Headers: %s | Body: %s"
                        (name method) uri path-params query-params headers body))))
 
-(defn- log-response
+(s/defn ^:private  log-response
   "Logs outgoing response details."
   [logger-comp response request]
   (when logger-comp

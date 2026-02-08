@@ -1,12 +1,13 @@
 (ns challenge.logic.activity-test
   (:require [challenge.logic.activity :as logic.activity]
             [clojure.test :refer [deftest is testing use-fixtures]]
-            [schema.test :refer [validate-schemas]])
+            [schema.test :refer [validate-schemas]]
+            [schema.core :as s])
   (:import [java.time LocalDate]))
 
 (use-fixtures :once validate-schemas)
 
-(defn make-activity
+(s/defn make-activity
   "Helper function to create a valid activity for testing"
   ([]
    (make-activity (LocalDate/now)))

@@ -1,9 +1,10 @@
 (ns challenge.infrastructure.http-server.import
   (:require [challenge.controllers.import :as controllers.import]
             [challenge.interface.http.response :as response]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [schema.core :as s]))
 
-(defn- file-part->csv-string
+(s/defn ^:private  file-part->csv-string
   "Reads CSV content from a multipart file part (map with :bytes or :stream)."
   [file-part]
   (cond
@@ -14,14 +15,14 @@
     :else
     nil))
 
-(defn- filename->type
+(s/defn ^:private  filename->type
   "Infers import type from filename (e.g. *_planned.csv -> \"planned\")."
   [filename]
   (if (and filename (string/includes? (string/lower-case (str filename)) "_planned"))
     "planned"
     "executed"))
 
-(defn import-handler
+(s/defn import-handler
   "Handles POST /api/v1/import (multipart CSV upload).
    Expects :multipart-params with \"file\" key (set by multipart interceptor).
    Returns 400 if no file; otherwise runs import logic and returns

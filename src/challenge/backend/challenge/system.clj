@@ -6,9 +6,10 @@
             [challenge.components.persistency :as components.persistency]
             [challenge.config.reader :as config.reader]
             [challenge.handlers.http-server :as handlers.http-server]
-            [com.stuartsierra.component :as component]))
+            [com.stuartsierra.component :as component]
+            [schema.core :as s]))
 
-(defn new-system
+(s/defn new-system
   ([]
    (new-system {}))
   ([{:keys [server-config logger-name]
@@ -29,6 +30,6 @@
                (components.pedestal/new-pedestal server-config)
                [:config :logger :persistency]))))
 
-(defn new-dev-system
+(s/defn new-dev-system
   []
   (new-system {:server-config handlers.http-server/server-config}))

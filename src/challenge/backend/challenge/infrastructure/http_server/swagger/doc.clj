@@ -1,6 +1,7 @@
-(ns challenge.infrastructure.http-server.swagger.doc)
+(ns challenge.infrastructure.http-server.swagger.doc
+  (:require [schema.core :as s]))
 
-(defn- parse-route
+(s/defn ^:private  parse-route
   [route]
   (let [route-vec (vec route)
         path (first route-vec)
@@ -18,7 +19,7 @@
      :handler-or-interceptors handler-or-interceptors
      :route-map route-map}))
 
-(defn- remove-doc-keys
+(s/defn ^:private  remove-doc-keys
   [route]
   (let [{:keys [path method handler-or-interceptors route-map]} (parse-route route)
         cleaned-map (dissoc route-map :doc :responses :request-body :parameters :summary :description)]
@@ -26,7 +27,7 @@
                  handler-or-interceptors
                  (apply concat cleaned-map)))))
 
-(defn extract-route-docs
+(s/defn extract-route-docs
   [routes]
   (let [excluded-routes #{:swagger-json
                           :swagger-ui
@@ -49,6 +50,6 @@
             {}
             routes)))
 
-(defn clean-routes-for-pedestal
+(s/defn clean-routes-for-pedestal
   [routes]
   (set (map remove-doc-keys routes)))

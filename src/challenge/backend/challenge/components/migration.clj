@@ -3,7 +3,8 @@
   (:require [challenge.components.logger :as logger]
             [challenge.config.reader :as config.reader]
             [com.stuartsierra.component :as component]
-            [migratus.core :as migratus]))
+            [migratus.core :as migratus]
+            [schema.core :as s]))
 
 (defrecord MigrationComponent [config logger]
   component/Lifecycle
@@ -43,7 +44,7 @@
       (logger/log-call log :info "[Migration] Migration component stopped"))
     this))
 
-(defn new-migration
+(s/defn new-migration
   "Creates a new migration component."
   []
   (map->MigrationComponent {}))

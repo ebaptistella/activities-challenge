@@ -6,9 +6,10 @@
             [challenge.handlers.routes.swagger :as routes.swagger]
             [challenge.infrastructure.http-server.swagger.doc :as swagger.doc]
             [io.pedestal.http :as http]
-            [io.pedestal.http.route :as route]))
+            [io.pedestal.http.route :as route]
+            [schema.core :as s]))
 
-(defn- combine-routes
+(s/defn ^:private  combine-routes
   []
   (set (concat routes.health/routes
                routes.activity/routes

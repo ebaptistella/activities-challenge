@@ -2,7 +2,8 @@
   (:require [challenge.components.logger :as logger]
             [challenge.config.reader :as config.reader]
             [com.stuartsierra.component :as component]
-            [next.jdbc.connection :as connection])
+            [next.jdbc.connection :as connection]
+            [schema.core :as s])
   (:import (com.zaxxer.hikari HikariDataSource)))
 
 (defprotocol IPersistency
@@ -31,7 +32,7 @@
   (get-datasource [_this]
     datasource))
 
-(defn new-persistency
+(s/defn new-persistency
   "Creates a new persistency component"
   []
   (map->PersistencyComponent {}))

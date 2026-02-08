@@ -3,17 +3,18 @@
   (:require [challenge.adapters.activity :as adapters.activity]
             [challenge.logic.activity :as logic.activity]
             [clojure.data.csv :as csv]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [schema.core :as s])
   (:import [java.io StringReader]))
 
-(defn- parse-number
+(s/defn ^:private  parse-number
   [s]
   (when (and s (not (string/blank? s)))
     (try
       (Double/parseDouble (string/trim s))
       (catch NumberFormatException _ nil))))
 
-(defn- row->activity-request
+(s/defn ^:private  row->activity-request
   "Maps a CSV row (vector) to a wire-style map for planned import.
    Header order: Date, Activity, Activity type, Unit, Amount planned."
   [row]
@@ -26,7 +27,7 @@
        :amount-planned (parse-number amount-planned)
        :amount-executed nil})))
 
-(defn parse-csv-rows
+(s/defn parse-csv-rows
   "Parses CSV string into a sequence of activity-request maps (planned format).
    Skips header and empty rows. Returns lazy seq."
   [csv-string]
@@ -38,7 +39,7 @@
            (map row->activity-request)
            (filter some?)))))
 
-(defn process-import-rows
+(s/defn process-import-rows
   "Processes parsed activity requests: validate each, return counts and list of
    valid activity models for persistence. Does not perform I/O."
   [activity-requests current-date]

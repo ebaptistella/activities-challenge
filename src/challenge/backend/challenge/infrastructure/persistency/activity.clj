@@ -16,16 +16,16 @@
     (when db-result
       (adapters.activity/persistency->model db-result))))
 
-(defn- build-list-where
+(s/defn ^:private  build-list-where
   "Builds [where-clause params] for find-all from optional filters.
    Supports :date (exact), :activity (ILIKE %value%), :activity_type (exact)."
   [filters]
   (let [{:keys [date activity activity_type]} (or filters {})
         not-blank? (fn [v] (and (some? v) (not (str/blank? (str v)))))
         conditions (cond-> []
-                    (not-blank? date) (conj ["date = CAST(? AS date)" date])
-                    (not-blank? activity) (conj ["activity ILIKE ?" (str "%" (str activity) "%")])
-                    (not-blank? activity_type) (conj ["activity_type = ?" (str activity_type)]))
+                     (not-blank? date) (conj ["date = CAST(? AS date)" date])
+                     (not-blank? activity) (conj ["activity ILIKE ?" (str "%" (str activity) "%")])
+                     (not-blank? activity_type) (conj ["activity_type = ?" (str activity_type)]))
         [clauses params] (when (seq conditions)
                            (reduce (fn [[clauses params] [clause param]]
                                      [(conj clauses clause) (conj params param)])

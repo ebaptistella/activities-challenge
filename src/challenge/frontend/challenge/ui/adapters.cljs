@@ -1,7 +1,7 @@
 (ns challenge.ui.adapters
   "Adapters for data transformation between API and models.")
 
-(defn- normalize-activity-item
+(defn ^:private  normalize-activity-item
   "Normalizes a single activity from API (supports kebab-case, snake_case and camelCase from JSON).
    Ensures keys used by the table exist and adds :amount-display and :kind for display."
   [item]

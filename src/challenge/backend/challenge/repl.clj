@@ -2,11 +2,12 @@
   "REPL utilities with auto-start functionality."
   (:require [challenge.components.logger :as logger]
             [challenge.system :as system]
-            [com.stuartsierra.component :as component]))
+            [com.stuartsierra.component :as component]
+            [schema.core :as s]))
 
 (defonce system (atom nil))
 
-(defn start!
+(s/defn start!
   "Start the system. Useful for REPL development."
   []
   (if @system
@@ -22,7 +23,7 @@
         (println "[System] Server running. Check logs for port information."))
       @system)))
 
-(defn stop!
+(s/defn stop!
   "Stop the system. Useful for REPL development."
   []
   (when @system
@@ -32,13 +33,13 @@
   (when (nil? @system)
     (println "[System] System was not running")))
 
-(defn restart!
+(s/defn restart!
   "Restart the system. Useful for REPL development."
   []
   (stop!)
   (start!))
 
-(defn reload!
+(s/defn reload!
   "Reload namespaces and restart the system. Useful for development when code changes."
   []
   (println "[System] Reloading namespaces...")
@@ -48,7 +49,7 @@
   (println "[System] Namespaces reloaded. Restarting system...")
   (restart!))
 
-(defn auto-start!
+(s/defn auto-start!
   "Automatically starts the system when REPL is initialized."
   []
   (println "\n[REPL] Starting system...")

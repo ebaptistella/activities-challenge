@@ -177,6 +177,9 @@
     (fetch-activities!)))
 
 (defn ^:export init
-  "Exported initialization function to be called by HTML."
+  "Exported initialization function to be called by HTML or on namespace load."
   []
   (mount-root))
+
+;; Mount app when namespace loads (avoids timing issues with HTML inline script).
+(init)

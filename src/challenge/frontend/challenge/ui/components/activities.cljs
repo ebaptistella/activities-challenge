@@ -49,9 +49,9 @@
   [activity]
   (let [activity-type (or (:activity-type activity) (:activity_type activity))
         amount-display (or (:amount-display activity)
-                          (when (or (:amount-planned activity) (:amount-executed activity))
-                            (str (or (:amount-planned activity) "-") " / " (or (:amount-executed activity) "-")))
-                          "-")]
+                           (when (or (:amount-planned activity) (:amount-executed activity))
+                             (str (or (:amount-planned activity) "-") " / " (or (:amount-executed activity) "-")))
+                           "-")]
     ^{:key (str (:id activity) "-" (:activity activity) "-" (or activity-type "") "-" (:kind activity))}
     [:tr.hover:bg-gray-50
      [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 (:activity activity)]

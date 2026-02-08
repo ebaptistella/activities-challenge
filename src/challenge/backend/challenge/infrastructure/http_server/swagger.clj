@@ -2,9 +2,10 @@
   (:require [challenge.infrastructure.http-server.static :as static]
             [challenge.infrastructure.http-server.swagger.doc :as swagger.doc]
             [challenge.infrastructure.http-server.swagger.generator :as swagger.generator]
-            [challenge.interface.http.response :as response]))
+            [challenge.interface.http.response :as response]
+            [schema.core :as s]))
 
-(defn create-swagger-json-handler
+(s/defn create-swagger-json-handler
   [all-routes-with-docs]
   (fn swagger-json-handler [_request]
     (let [route-docs (swagger.doc/extract-route-docs all-routes-with-docs)

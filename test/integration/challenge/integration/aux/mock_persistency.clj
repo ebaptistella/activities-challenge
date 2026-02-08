@@ -29,7 +29,7 @@
   (clear-storage [_this]
     (reset! storage {})))
 
-(defn new-mock-persistency
+(s/defn new-mock-persistency
   "Creates a new mock persistency component"
   []
   (map->MockPersistencyComponent {}))

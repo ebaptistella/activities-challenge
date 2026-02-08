@@ -2,7 +2,7 @@
   (:require [clojure.string :as string]
             [schema.core :as s]))
 
-(defn- extract-key-name
+(s/defn ^:private  extract-key-name
   [k]
   (cond
     (instance? schema.core.OptionalKey k)
@@ -14,7 +14,7 @@
     :else
     (str k)))
 
-(defn- prismatic-type-to-json-type
+(s/defn ^:private  prismatic-type-to-json-type
   [schema]
   (cond
     (= schema s/Str) {:type "string"}
@@ -29,7 +29,7 @@
     (= schema java.lang.Boolean) {:type "boolean"}
     :else nil))
 
-(defn- is-maybe-schema?
+(s/defn ^:private  is-maybe-schema?
   [schema]
   (try
     (or
@@ -39,7 +39,7 @@
      (instance? schema.core.Maybe schema))
     (catch Exception _ false)))
 
-(defn- extract-maybe-schema
+(s/defn ^:private  extract-maybe-schema
   [schema]
   (try
     (cond
@@ -50,7 +50,7 @@
       :else nil)
     (catch Exception _ nil)))
 
-(defn- schema-to-json-schema
+(s/defn ^:private  schema-to-json-schema
   [schema]
   (let [json-type-result (prismatic-type-to-json-type schema)]
     (cond
@@ -109,7 +109,7 @@
               (seq required) (assoc :required required)))))
       :else {:type "object" :description "Schema type not fully specified"})))
 
-(defn- response-schema-to-openapi
+(s/defn ^:private  response-schema-to-openapi
   [response-schema]
   (if (map? response-schema)
     (let [body-schema (:body response-schema)
@@ -121,7 +121,7 @@
     {:description ""
      :content {"application/json" {:schema {:type "object"}}}}))
 
-(defn- path-param-to-openapi
+(s/defn ^:private  path-param-to-openapi
   [param]
   (if (string? param)
     {:name param
@@ -130,7 +130,7 @@
      :schema {:type "string"}}
     param))
 
-(defn- extract-path-params
+(s/defn ^:private  extract-path-params
   [path]
   (let [matches (re-seq #":(\w+)" path)]
     (map (fn [[_ param-name]]
@@ -140,7 +140,7 @@
             :schema {:type "integer"}})
          matches)))
 
-(defn- request-body-to-openapi
+(s/defn ^:private  request-body-to-openapi
   [request-body]
   (if (map? request-body)
     (let [content (:content request-body)
@@ -156,7 +156,7 @@
                         content))))
     request-body))
 
-(defn- route-doc-to-openapi-path
+(s/defn ^:private  route-doc-to-openapi-path
   [route-doc]
   (let [method (name (:method route-doc))
         summary (:summary route-doc)
@@ -178,7 +178,7 @@
                                {}
                                responses)))}))
 
-(defn generate-openapi-spec
+(s/defn generate-openapi-spec
   [route-docs]
   (let [paths (reduce-kv
                (fn [acc _route-name route-doc]

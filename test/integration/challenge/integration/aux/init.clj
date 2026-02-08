@@ -7,7 +7,8 @@
             [challenge.integration.aux.mock-persistency :as mock-persistency]
             [com.stuartsierra.component :as component]
             [io.pedestal.http :as http]
-            [state-flow.api :as flow]))
+            [state-flow.api :as flow]
+            [schema.core :as s]))
 
 ;; Atom to store the current mock persistency instance during test execution
 (def ^:private mock-persistency-instance (atom nil))
@@ -18,7 +19,7 @@
 (def ^:private original-save! (atom nil))
 (def ^:private original-delete! (atom nil))
 
-(defn- setup-mocks!
+(s/defn ^:private  setup-mocks!
   "Sets up mock functions for persistency operations"
   [mock-persistency]
   (reset! mock-persistency-instance mock-persistency)
@@ -45,7 +46,7 @@
                   (constantly (fn [id _persistency]
                                 (mock-persistency/delete! id mock-persistency)))))
 
-(defn init!
+(s/defn init!
   "Initializes the test system with mocked components.
    Returns a function that returns the initial state for state-flow.
    This follows the pattern used in ordnungsamt project."
@@ -79,7 +80,7 @@
        :config config
        :pedestal pedestal})))
 
-(defn cleanup!
+(s/defn cleanup!
   "Stops the test system and cleans up resources.
    Returns a function that takes state and cleans up."
   []
@@ -91,7 +92,7 @@
     ;; unit tests after integration tests in the same JVM session.
     ))
 
-(defn- initialize-schema-validation!
+(s/defn ^:private  initialize-schema-validation!
   "Initializes the schema validation if schema.test is available.
    This function is idempotent and can be called multiple times without problems.
    

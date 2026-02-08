@@ -1,8 +1,9 @@
 (ns challenge.controllers.import
   (:require [challenge.infrastructure.persistency.activity :as persistency.activity]
-            [challenge.logic.import :as logic.import]))
+            [challenge.logic.import :as logic.import]
+            [schema.core :as s]))
 
-(defn import-csv!
+(s/defn import-csv!
   "Imports activities from a CSV string. Parses rows, validates each, saves valid
    ones to persistency. Returns {:type type :valid N :invalid M}."
   [csv-string type persistency]

@@ -2,9 +2,10 @@
   (:require [challenge.components.logger :as logger]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [com.stuartsierra.component :as component]))
+            [com.stuartsierra.component :as component]
+            [schema.core :as s]))
 
-(defn- load-config-file
+(s/defn ^:private  load-config-file
   [config-file logger]
   (try
     (let [resource (io/resource config-file)]
@@ -34,10 +35,10 @@
   (stop [this]
     (dissoc this :config)))
 
-(defn new-config
+(s/defn new-config
   [config-file]
   (map->ConfigComponent {:config-file config-file}))
 
-(defn get-config
+(s/defn get-config
   [config-component]
   (:config config-component))

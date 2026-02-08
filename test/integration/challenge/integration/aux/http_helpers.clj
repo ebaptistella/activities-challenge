@@ -3,9 +3,10 @@
             [clojure.string :as str]
             [io.pedestal.http :as http]
             [io.pedestal.test :as pedestal-test]
-            [state-flow.api :as flow :refer [flow]]))
+            [state-flow.api :as flow :refer [flow]]
+            [schema.core :as s]))
 
-(defn request
+(s/defn request
   "Makes an HTTP request to the Pedestal server.
    
    Options:

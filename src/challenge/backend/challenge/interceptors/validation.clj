@@ -7,7 +7,7 @@
             [io.pedestal.interceptor :as interceptor]
             [schema.core :as s]))
 
-(defn- content-type-is-json?
+(s/defn ^:private  content-type-is-json?
   "Returns true when the request Content-Type is application/json (or with charset)."
   [request]
   (when-let [content-type (or (get-in request [:headers "content-type"])
@@ -111,7 +111,7 @@
                                     status)
                    (assoc context :response updated-response)))))}))
 
-(defn validate-request-body
+(s/defn validate-request-body
   "Creates an interceptor to validate request body against a schema.
    
    Parameters:
@@ -189,7 +189,7 @@
                                     activity-id)
                    (assoc-in context [:request :activity-id] activity-id)))))}))
 
-(defn not-found-message?
+(s/defn not-found-message?
   "Checks if an error message indicates a 'not found' condition.
    Uses case-insensitive matching for common patterns.
    Returns false if error-message is nil."

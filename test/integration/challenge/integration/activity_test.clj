@@ -4,11 +4,12 @@
             [clojure.test :refer [use-fixtures is]]
             [schema.test :refer [validate-schemas]]
             [state-flow.api :as flow :refer [flow return]]
-            [state-flow.assertions.matcher-combinators :refer [match?]]))
+            [state-flow.assertions.matcher-combinators :refer [match?]]
+            [schema.core :as s]))
 
 (use-fixtures :once validate-schemas)
 
-(defn valid-activity-data
+(s/defn valid-activity-data
   "Returns a valid activity data map for testing"
   []
   {:date "2024-01-15"
@@ -18,7 +19,7 @@
    :amount-planned 8
    :amount-executed 6})
 
-(defn future-date-str
+(s/defn future-date-str
   "Returns a future date as ISO string"
   []
   (str (.plusDays (java.time.LocalDate/now) 1)))
@@ -182,10 +183,10 @@
         (match? {:status 201} create-response)
         (match? {:status 200
                  :body {:items [{:id number?
-                                      :date "2024-01-15"
-                                      :activity "Test activity"
-                                      :activity-type "work"
-                                      :unit "hours"}]}}
+                                 :date "2024-01-15"
+                                 :activity "Test activity"
+                                 :activity-type "work"
+                                 :unit "hours"}]}}
                 list-response)))
 
 (defflow list-activities-multiple-activities-test
@@ -215,8 +216,8 @@
         (match? {:status 201} create3)
         (match? {:status 200
                  :body {:items (fn [items]
-                                      (= 3 (count items))
-                                      (every? #(contains? % :id) items))}}
+                                 (= 3 (count items))
+                                 (every? #(contains? % :id) items))}}
                 list-response)))
 
 (defflow list-activities-ordering-test
@@ -239,9 +240,9 @@
         (match? {:status 201} create2)
         (match? {:status 200
                  :body {:items (fn [items]
-                                      (let [dates (map :date items)]
-                                        (or (= "2024-01-15" (first dates))
-                                            (= "2024-01-10" (first dates)))))}}
+                                 (let [dates (map :date items)]
+                                   (or (= "2024-01-15" (first dates))
+                                       (= "2024-01-10" (first dates)))))}}
                 list-response)))
 
 ;; ============================================================================
@@ -510,7 +511,7 @@
                 create-response)
         (match? {:status 200
                  :body {:items (fn [items]
-                                      (some #(= activity-id (:id %)) items))}}
+                                 (some #(= activity-id (:id %)) items))}}
                 list-response)
         (match? {:status 200
                  :body {:id activity-id}}
@@ -553,7 +554,7 @@
         (match? {:status 201} create3)
         (match? {:status 200
                  :body {:items (fn [items]
-                                      (= 3 (count items)))}}
+                                 (= 3 (count items)))}}
                 list-response)
         (match? #{id1 id2 id3} all-ids)))
 

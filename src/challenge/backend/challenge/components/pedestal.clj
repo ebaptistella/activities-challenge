@@ -5,7 +5,8 @@
             [challenge.interceptors.validation :as interceptors.validation]
             [com.stuartsierra.component :as component]
             [io.pedestal.http :as http]
-            [io.pedestal.interceptor :as interceptor]))
+            [io.pedestal.interceptor :as interceptor]
+            [schema.core :as s]))
 
 (defrecord PedestalComponent [server-config config logger persistency server jetty-server system]
   component/Lifecycle
@@ -122,6 +123,6 @@
         (logger/log-call log :info "[Pedestal] Server stopped successfully")))
     (dissoc this :server :jetty-server :system)))
 
-(defn new-pedestal
+(s/defn new-pedestal
   [server-config]
   (map->PedestalComponent {:server-config server-config}))

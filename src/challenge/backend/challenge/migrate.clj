@@ -4,9 +4,10 @@
   (:require [challenge.components.configuration :as components.configuration]
             [challenge.config.reader :as config.reader]
             [com.stuartsierra.component :as component]
-            [migratus.core :as migratus]))
+            [migratus.core :as migratus]
+            [schema.core :as s]))
 
-(defn run-migrations
+(s/defn run-migrations
   "Runs database migrations using the configuration from application.edn.
    Environment variables can override config values:
    - DATABASE_URL: Full JDBC connection string (takes precedence)
@@ -34,7 +35,7 @@
       (finally
         (component/stop config-component)))))
 
-(defn -main
+(s/defn -main
   "Main entry point for running migrations standalone."
   [& _args]
   (try

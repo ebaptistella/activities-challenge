@@ -2,9 +2,10 @@
   "Interceptors for CSV import (multipart parsing via Servlet API)."
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
-            [io.pedestal.interceptor :as interceptor]))
+            [io.pedestal.interceptor :as interceptor]
+            [schema.core :as s]))
 
-(defn- part->bytes
+(s/defn ^:private  part->bytes
   [part]
   (with-open [in (.getInputStream part)]
     (let [out (java.io.ByteArrayOutputStream.)]
@@ -21,7 +22,7 @@
              (let [request (:request context)
                    servlet-request (:servlet-request request)
                    content-type (some #(get-in request [:headers %])
-                                     ["content-type" "Content-Type"])
+                                      ["content-type" "Content-Type"])
                    s (str (or content-type ""))]
                (if (and servlet-request
                         (string/includes? (string/lower-case s) "multipart/form-data"))
@@ -37,10 +38,10 @@
                             :response {:status 400
                                        :headers {"Content-Type" "application/json"}
                                        :body "{\"error\":\"File part 'file' required\"}"}))
-                 (catch Exception e
-                   (assoc context
-                          :response {:status 400
-                                     :headers {"Content-Type" "application/json"}
-                                     :body (str "{\"error\":\"Invalid multipart: "
-                                                (.getMessage e) "\"")})))
+                   (catch Exception e
+                     (assoc context
+                            :response {:status 400
+                                       :headers {"Content-Type" "application/json"}
+                                       :body (str "{\"error\":\"Invalid multipart: "
+                                                  (.getMessage e) "\"")})))
                  context)))}))

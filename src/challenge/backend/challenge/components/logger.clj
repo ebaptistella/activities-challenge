@@ -1,5 +1,6 @@
 (ns challenge.components.logger
-  (:require [com.stuartsierra.component :as component])
+  (:require [com.stuartsierra.component :as component]
+            [schema.core :as s])
   (:import (org.slf4j LoggerFactory)))
 
 (def default-logger-name
@@ -71,7 +72,7 @@
 ;; To use varargs, call them directly: (info logger "message" [arg1 arg2])
 ;; Or use the bound/log-call helpers which handle varargs conversion.
 
-(defn bound
+(s/defn bound
   "Returns a map of logging functions with the logger-component already bound.
    Use with log-call for cleaner syntax.
    
@@ -98,7 +99,7 @@
                                               [args nil])]
                 (error logger-component message format-args throwable))))})
 
-(defn log-call
+(s/defn log-call
   "Calls a logging function from a bound logger.
    
    Usage:
@@ -113,7 +114,7 @@
   (when-let [log-fn (get bound-logger log-level)]
     (apply log-fn args)))
 
-(defn new-logger
+(s/defn new-logger
   ([]
    (new-logger default-logger-name))
   ([logger-name]

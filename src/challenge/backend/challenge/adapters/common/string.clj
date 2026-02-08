@@ -1,6 +1,7 @@
 (ns challenge.adapters.common.string
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [schema.core :as s]))
 
-(defn kebab->snake
+(s/defn kebab->snake
   [s]
   (str/replace s #"-" "_"))

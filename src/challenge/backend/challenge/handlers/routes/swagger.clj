@@ -1,7 +1,8 @@
 (ns challenge.handlers.routes.swagger
-  (:require [challenge.infrastructure.http-server.swagger :as http-server.swagger]))
+  (:require [challenge.infrastructure.http-server.swagger :as http-server.swagger]
+            [schema.core :as s]))
 
-(defn create-swagger-routes
+(s/defn create-swagger-routes
   [all-routes-with-docs]
   (let [swagger-json-handler (http-server.swagger/create-swagger-json-handler all-routes-with-docs)]
     #{["/swagger.json"

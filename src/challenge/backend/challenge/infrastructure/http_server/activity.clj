@@ -2,9 +2,10 @@
   (:require [challenge.adapters.activity :as adapters.activity]
             [challenge.components.logger :as logger]
             [challenge.controllers.activity :as controllers.activity]
-            [challenge.interface.http.response :as response]))
+            [challenge.interface.http.response :as response]
+            [schema.core :as s]))
 
-(defn create-activity-handler
+(s/defn create-activity-handler
   [{:keys [activity-wire] componentes :componentes}]
   (let [{:keys [logger]} componentes
         log (logger/bound logger)]
@@ -47,7 +48,7 @@
                            (pr-str e))
           (throw e))))))
 
-(defn get-activity-handler
+(s/defn get-activity-handler
   [{:keys [activity-id] componentes :componentes}]
   (let [{:keys [persistency]} componentes
         result (controllers.activity/get-activity activity-id persistency)]
@@ -56,7 +57,7 @@
         (response/ok response-wire))
       (response/not-found "Activity not found"))))
 
-(defn- query-params->filters
+(s/defn ^:private  query-params->filters
   "Extracts optional list filters from Pedestal query-params.
    Pedestal uses keyword keys for valid names (date, activity, activity_type).
    Query params: date (YYYY-MM-DD), activity (substring), activity_type (exact)."
@@ -71,7 +72,7 @@
              :activity activity-v
              :activity_type type-v}))))
 
-(defn list-activities-handler
+(s/defn list-activities-handler
   "Receives the request map (same as other handlers); componentes and query-params come from request."
   [{:keys [query-params] componentes :componentes}]
   (let [{:keys [persistency]} componentes
@@ -81,7 +82,7 @@
         response-body {:items response-wires}]
     (response/ok response-body)))
 
-(defn update-activity-handler
+(s/defn update-activity-handler
   [{:keys [activity-wire activity-id] componentes :componentes}]
   (let [{:keys [logger]} componentes
         log (logger/bound logger)]
@@ -95,7 +96,7 @@
             response-wire (adapters.activity/model->wire result)]
         (response/ok response-wire)))))
 
-(defn delete-activity-handler
+(s/defn delete-activity-handler
   [{:keys [activity-id] componentes :componentes}]
   (let [{:keys [persistency]} componentes
         _ (controllers.activity/delete-activity! activity-id persistency)]

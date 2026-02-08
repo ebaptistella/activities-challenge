@@ -1,5 +1,6 @@
 (ns challenge.config.reader
-  (:require [challenge.components.configuration :as components.configuration]))
+  (:require [challenge.components.configuration :as components.configuration]
+            [schema.core :as s]))
 
 (def default-config-file
   "config/application.edn")
@@ -7,37 +8,23 @@
 (def default-application-name
   "challenge")
 
-(defn- get-config
+(s/defn ^:private  get-config
   [config-component]
   (components.configuration/get-config config-component))
 
-(defn- get-http-config
+(s/defn ^:private  get-http-config
   [config-component]
   (get-in (get-config config-component) [:http]))
 
-(defn http->port
+(s/defn http->port
   [config-component]
   (:port (get-http-config config-component)))
 
-(defn http->host
+(s/defn http->host
   [config-component]
   (:host (get-http-config config-component)))
 
-(defn config-file
-  "Returns the config file path from the config component.
-   Falls back to default-config-file if not found in config."
-  [config-component]
-  (or (:config-file (get-config config-component))
-      default-config-file))
-
-(defn application-name
-  "Returns the application name from the config component.
-   Falls back to default-application-name if not found in config."
-  [config-component]
-  (or (:application-name (get-config config-component))
-      default-application-name))
-
-(defn database-config
+(s/defn database-config
   "Returns the database config from the config component.
    Applies environment variable overrides (DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD).
    Environment variables take precedence over config file values."
@@ -50,7 +37,7 @@
             :user (or (System/getenv "DB_USER") (:user base-db-config))
             :password (or (System/getenv "DB_PASSWORD") (:password base-db-config))})))
 
-(defn database-connection-uri
+(s/defn database-connection-uri
   "Builds a JDBC connection URI from database config.
    Returns nil if db-config is nil."
   [db-config]
@@ -62,7 +49,7 @@
             (:user db-config)
             (:password db-config))))
 
-(defn database-connection-uri-from-component
+(s/defn database-connection-uri-from-component
   "Gets database config from component and builds JDBC connection URI.
    Checks DATABASE_URL environment variable first, then builds from config.
    Returns the connection URI string."

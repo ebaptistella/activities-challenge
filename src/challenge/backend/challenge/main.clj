@@ -2,9 +2,10 @@
   (:gen-class)
   (:require [challenge.components.logger :as logger]
             [challenge.system :as system]
-            [com.stuartsierra.component :as component]))
+            [com.stuartsierra.component :as component]
+            [schema.core :as s]))
 
-(defn -main [& _args]
+(s/defn -main [& _args]
   (let [sys (component/start-system (system/new-dev-system))
         pedestal (:pedestal sys)
         log (logger/bound (:logger sys))]
