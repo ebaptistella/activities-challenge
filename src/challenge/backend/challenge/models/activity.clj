@@ -17,7 +17,6 @@
   (schema/strict-schema activity-skeleton))
 
 (def activity-partial-skeleton
-  "Subconjunto de campos de Activity; usado para atualização parcial (PATCH). Todos opcionais."
   {:id              {:schema (s/maybe s/Int)               :required false :doc "Activity unique identifier"}
    :date            {:schema (s/maybe java.time.LocalDate) :required false :doc "Activity date"}
    :activity        {:schema (s/maybe s/Str)               :required false :doc "Activity description"}

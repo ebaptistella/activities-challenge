@@ -7,19 +7,8 @@
             [next.jdbc.sql :as sql]
             [schema.core :as s]))
 
-(s/defn find-by-id :- (s/maybe models.activity/Activity)
-  [activity-id :- s/Int
-   persistency]
-  (let [ds (components.persistency/get-datasource persistency)
-        db-result (jdbc/execute-one! ds
-                                     ["SELECT * FROM activity WHERE id = ?" activity-id])]
-    (when db-result
-      (adapters.activity/persistency->model db-result))))
-
-(s/defn ^:private  build-list-where
-  "Builds [where-clause params] for find-all from optional filters.
-   Supports :date (exact), :activity (ILIKE %value%), :activity_type (exact)."
-  [filters]
+(s/defn ^:private  build-list-where :- (s/maybe [s/Str [s/Any]])
+  [filters :- (s/maybe {s/Keyword s/Any})]
   (let [{:keys [date activity activity_type]} (or filters {})
         not-blank? (fn [v] (and (some? v) (not (str/blank? (str v)))))
         conditions (cond-> []
@@ -34,11 +23,20 @@
       [(str/join " AND " clauses) params]
       [nil []])))
 
+(s/defn find-by-id :- (s/maybe models.activity/Activity)
+  [activity-id :- s/Int
+   persistency :- components.persistency/IPersistencySchema]
+  (let [ds (components.persistency/get-datasource persistency)
+        db-result (jdbc/execute-one! ds
+                                     ["SELECT * FROM activity WHERE id = ?" activity-id])]
+    (when db-result
+      (adapters.activity/persistency->model db-result))))
+
 (s/defn find-all :- [models.activity/Activity]
-  "Returns all activities, optionally filtered by date, activity (substring), and activity_type."
-  ([persistency]
-   (find-all persistency nil))
-  ([persistency filters]
+  ([persistency :- components.persistency/IPersistencySchema]
+   (find-all persistency {}))
+  ([persistency :- components.persistency/IPersistencySchema
+    filters :- (s/maybe {s/Keyword s/Any})]
    (let [ds (components.persistency/get-datasource persistency)
          [where-clause params] (build-list-where filters)
          base-sql "SELECT * FROM activity"
@@ -52,7 +50,7 @@
 
 (s/defn save! :- models.activity/Activity
   [activity :- models.activity/Activity
-   persistency]
+   persistency :- components.persistency/IPersistencySchema]
   (let [ds (components.persistency/get-datasource persistency)]
     (if (:id activity)
       ;; Update existing
@@ -82,7 +80,7 @@
 
 (s/defn delete! :- s/Bool
   [activity-id :- s/Int
-   persistency]
+   persistency :- components.persistency/IPersistencySchema]
   (let [ds (components.persistency/get-datasource persistency)
         result (sql/delete! ds :activity {:id activity-id})]
     (> (first result) 0)))
