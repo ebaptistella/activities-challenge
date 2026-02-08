@@ -1,6 +1,7 @@
 (ns challenge.handlers.http-server
   (:require [challenge.handlers.routes.activity :as routes.activity]
             [challenge.handlers.routes.health :as routes.health]
+            [challenge.handlers.routes.import :as routes.import]
             [challenge.handlers.routes.static :as routes.static]
             [challenge.handlers.routes.swagger :as routes.swagger]
             [challenge.infrastructure.http-server.swagger.doc :as swagger.doc]
@@ -11,6 +12,7 @@
   []
   (set (concat routes.health/routes
                routes.activity/routes
+               routes.import/routes
                routes.static/routes)))
 
 (def all-routes-with-docs

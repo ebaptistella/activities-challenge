@@ -587,3 +587,15 @@
                         :amount-planned 8}}
                 get-response)
         (flow/return (is (not= original-updated-at final-updated-at)))))
+
+;; ============================================================================
+;; POST /api/v1/import - Import CSV Tests
+;; ============================================================================
+
+(defflow import-csv-no-file-returns-400-test
+  (flow "POST /api/v1/import without file returns 400"
+        [response (http-helpers/request {:method :post
+                                         :path "/api/v1/import"})]
+        (match? {:status 400
+                 :body {:error "File required"}}
+                response)))

@@ -43,12 +43,14 @@
     (get activities activity-id)))
 
 (s/defn find-all :- [models.activity/Activity]
-  [persistency]
-  (let [storage (get-storage persistency)
-        activities @storage]
-    (->> activities
-         vals
-         (sort-by (juxt :date :id) #(compare %2 %1)))))
+  ([persistency]
+   (find-all persistency nil))
+  ([persistency _filters]
+   (let [storage (get-storage persistency)
+         activities @storage]
+     (->> activities
+          vals
+          (sort-by (juxt :date :id) #(compare %2 %1))))))
 
 (s/defn save! :- models.activity/Activity
   [activity :- models.activity/Activity

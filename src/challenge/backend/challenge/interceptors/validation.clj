@@ -7,9 +7,17 @@
             [io.pedestal.interceptor :as interceptor]
             [schema.core :as s]))
 
+(defn- content-type-is-json?
+  "Returns true when the request Content-Type is application/json (or with charset)."
+  [request]
+  (when-let [content-type (or (get-in request [:headers "content-type"])
+                              (get-in request [:headers "Content-Type"]))]
+    (string/starts-with? (string/lower-case (str content-type)) "application/json")))
+
 (def json-body
   "Interceptor to parse JSON request body and add it to :json-params key.
-   Uses Cheshire for JSON parsing."
+   Only parses when Content-Type is application/json; skips multipart and other types
+   so the body remains available for other interceptors (e.g. import multipart)."
   (interceptor/interceptor
    {:name ::json-body
     :enter (fn [context]
@@ -17,7 +25,7 @@
                    body (:body request)
                    logger-comp (interceptors.components/get-component request :logger)
                    log (logger/bound logger-comp)]
-               (if body
+               (if (and body (content-type-is-json? request))
                  (try
                    (let [body-str (cond
                                     (string? body) body

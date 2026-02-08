@@ -19,6 +19,7 @@
                  [cheshire "5.11.0"]
                  [com.zaxxer/HikariCP "5.1.0"]
                  [clj-schema "0.5.1"]
+                 [org.clojure/data.csv "1.0.1"]
                  [reagent "1.2.0"]
                  [cljsjs/react "18.2.0-0"]
                  [cljsjs/react-dom "18.2.0-0"]]

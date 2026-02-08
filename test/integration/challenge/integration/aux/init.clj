@@ -33,23 +33,17 @@
                   (constantly (fn [id _persistency]
                                 (mock-persistency/find-by-id id mock-persistency))))
   (alter-var-root #'persistency.activity/find-all
-                  (constantly (fn [_persistency]
-                                (mock-persistency/find-all mock-persistency))))
+                  (constantly (fn
+                                ([_persistency]
+                                 (mock-persistency/find-all mock-persistency))
+                                ([_persistency filters]
+                                 (mock-persistency/find-all mock-persistency filters)))))
   (alter-var-root #'persistency.activity/save!
                   (constantly (fn [activity _persistency]
                                 (mock-persistency/save! activity mock-persistency))))
   (alter-var-root #'persistency.activity/delete!
                   (constantly (fn [id _persistency]
                                 (mock-persistency/delete! id mock-persistency)))))
-
-(defn- restore-originals!
-  "Restores original persistency functions"
-  []
-  (when @original-find-by-id
-    (alter-var-root #'persistency.activity/find-by-id (constantly @original-find-by-id))
-    (alter-var-root #'persistency.activity/find-all (constantly @original-find-all))
-    (alter-var-root #'persistency.activity/save! (constantly @original-save!))
-    (alter-var-root #'persistency.activity/delete! (constantly @original-delete!))))
 
 (defn init!
   "Initializes the test system with mocked components.
