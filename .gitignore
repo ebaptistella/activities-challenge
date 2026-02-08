@@ -20,3 +20,7 @@ pom.xml.asc
 .clj-kondo/imports/
 resources/public/js/app.js
 resources/public/js/app.js.map
+resources/public/js/out/
+resources/public/js/out-prod/
+.claude/
+.specify/

@@ -38,21 +38,21 @@
              :migration-dir "resources/migrations"
              :db {:connection-uri (System/getenv "DATABASE_URL")}}
   :cljsbuild {:builds {:app {:source-paths ["src/challenge/frontend"]
-                             :compiler {:output-to "target/resources/public/js/app.js"
-                                        :output-dir "target/resources/public/js/out"
-                                        :asset-path "target/resources/js/out"
+                             :compiler {:output-to "resources/public/js/app.js"
+                                        :output-dir "resources/public/js/out"
+                                        :asset-path "js/out"
                                         :main challenge.ui.core
                                         :optimizations :none
                                         :source-map true
                                         :pretty-print true
                                         :verbose true}}
                        :prod {:source-paths ["src/challenge/frontend"]
-                              :compiler {:output-to "target/resources/public/js/app.js"
-                                         :output-dir "target/resources/public/js/out-prod"
-                                         :asset-path "target/resources/js/out-prod"
+                              :compiler {:output-to "resources/public/js/app.js"
+                                         :output-dir "resources/public/js/out-prod"
+                                         :asset-path "js/out-prod"
                                          :main challenge.ui.core
                                          :optimizations :advanced
-                                         :source-map "resources/public/js/app.js.map"
+                                         :source-map "js/app.js.map"
                                          :pretty-print false
                                          :closure-defines {goog.DEBUG false}}}}}
   :profiles {:dev {:dependencies [[io.pedestal/pedestal.service-tools "0.5.8"]
