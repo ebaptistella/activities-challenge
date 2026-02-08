@@ -169,7 +169,7 @@
         [response (http-helpers/request {:method :get
                                          :path "/api/v1/activities"})]
         (match? {:status 200
-                 :body {:activities []}}
+                 :body {:items []}}
                 response)))
 
 (defflow list-activities-single-activity-test
@@ -181,7 +181,7 @@
                                               :path "/api/v1/activities"})]
         (match? {:status 201} create-response)
         (match? {:status 200
-                 :body {:activities [{:id number?
+                 :body {:items [{:id number?
                                       :date "2024-01-15"
                                       :activity "Test activity"
                                       :activity-type "work"
@@ -214,9 +214,9 @@
         (match? {:status 201} create2)
         (match? {:status 201} create3)
         (match? {:status 200
-                 :body {:activities (fn [activities]
-                                      (= 3 (count activities))
-                                      (every? #(contains? % :id) activities))}}
+                 :body {:items (fn [items]
+                                      (= 3 (count items))
+                                      (every? #(contains? % :id) items))}}
                 list-response)))
 
 (defflow list-activities-ordering-test
@@ -238,8 +238,8 @@
         (match? {:status 201} create1)
         (match? {:status 201} create2)
         (match? {:status 200
-                 :body {:activities (fn [activities]
-                                      (let [dates (map :date activities)]
+                 :body {:items (fn [items]
+                                      (let [dates (map :date items)]
                                         (or (= "2024-01-15" (first dates))
                                             (= "2024-01-10" (first dates)))))}}
                 list-response)))
@@ -509,8 +509,8 @@
                  :body {:id number?}}
                 create-response)
         (match? {:status 200
-                 :body {:activities (fn [activities]
-                                      (some #(= activity-id (:id %)) activities))}}
+                 :body {:items (fn [items]
+                                      (some #(= activity-id (:id %)) items))}}
                 list-response)
         (match? {:status 200
                  :body {:id activity-id}}
@@ -547,13 +547,13 @@
          id3 (return (-> create3 :body :id))
          list-response (http-helpers/request {:method :get
                                               :path "/api/v1/activities"})
-         all-ids (return (set (map :id (-> list-response :body :activities))))]
+         all-ids (return (set (map :id (-> list-response :body :items))))]
         (match? {:status 201} create1)
         (match? {:status 201} create2)
         (match? {:status 201} create3)
         (match? {:status 200
-                 :body {:activities (fn [activities]
-                                      (= 3 (count activities)))}}
+                 :body {:items (fn [items]
+                                      (= 3 (count items)))}}
                 list-response)
         (match? #{id1 id2 id3} all-ids)))
 

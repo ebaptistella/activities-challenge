@@ -17,8 +17,11 @@
   (persistency.activity/find-by-id activity-id persistency))
 
 (s/defn list-activities :- [models.activity/Activity]
-  [persistency]
-  (persistency.activity/find-all persistency))
+  "Lists activities, optionally filtered by date, activity (substring), and activity_type."
+  ([persistency]
+   (persistency.activity/find-all persistency nil))
+  ([persistency filters]
+   (persistency.activity/find-all persistency filters)))
 
 (s/defn update-activity! :- models.activity/Activity
   [activity-id :- s/Int

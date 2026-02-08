@@ -16,11 +16,39 @@
     (when db-result
       (adapters.activity/persistency->model db-result))))
 
+(defn- build-list-where
+  "Builds [where-clause params] for find-all from optional filters.
+   Supports :date (exact), :activity (ILIKE %value%), :activity_type (exact)."
+  [filters]
+  (let [{:keys [date activity activity_type]} (or filters {})
+        not-blank? (fn [v] (and (some? v) (not (str/blank? (str v)))))
+        conditions (cond-> []
+                    (not-blank? date) (conj ["date = CAST(? AS date)" date])
+                    (not-blank? activity) (conj ["activity ILIKE ?" (str "%" (str activity) "%")])
+                    (not-blank? activity_type) (conj ["activity_type = ?" (str activity_type)]))
+        [clauses params] (when (seq conditions)
+                           (reduce (fn [[clauses params] [clause param]]
+                                     [(conj clauses clause) (conj params param)])
+                                   [[] []] conditions))]
+    (if (seq clauses)
+      [(str/join " AND " clauses) params]
+      [nil []])))
+
 (s/defn find-all :- [models.activity/Activity]
-  [persistency]
-  (let [ds (components.persistency/get-datasource persistency)
-        db-results (sql/query ds ["SELECT * FROM activity ORDER BY date DESC, id DESC"])]
-    (map adapters.activity/persistency->model db-results)))
+  "Returns all activities, optionally filtered by date, activity (substring), and activity_type."
+  ([persistency]
+   (find-all persistency nil))
+  ([persistency filters]
+   (let [ds (components.persistency/get-datasource persistency)
+         [where-clause params] (build-list-where filters)
+         base-sql "SELECT * FROM activity"
+         order-sql " ORDER BY date DESC, id DESC"
+         full-sql (if where-clause
+                    (str base-sql " WHERE " where-clause order-sql)
+                    (str base-sql order-sql))
+         query-vec (into [full-sql] params)
+         db-results (sql/query ds query-vec)]
+     (map adapters.activity/persistency->model db-results))))
 
 (s/defn save! :- models.activity/Activity
   [activity :- models.activity/Activity

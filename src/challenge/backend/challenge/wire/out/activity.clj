@@ -17,7 +17,7 @@
   (schema/strict-schema activity-response-skeleton))
 
 (def list-activities-response-skeleton
-  {:activities {:schema [ActivityResponse] :required true :doc "List of activities"}})
+  {:items {:schema [ActivityResponse] :required true :doc "List of activities"}})
 
 (s/defschema ListActivitiesResponse
   (schema/strict-schema list-activities-response-skeleton))

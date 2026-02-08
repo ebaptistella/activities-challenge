@@ -56,10 +56,27 @@
         (response/ok response-wire))
       (response/not-found "Activity not found"))))
 
+(defn- query-params->filters
+  "Extracts optional list filters from Pedestal query-params.
+   Pedestal uses keyword keys for valid names (date, activity, activity_type).
+   Query params: date (YYYY-MM-DD), activity (substring), activity_type (exact)."
+  [query-params]
+  (when query-params
+    (let [date-v    (or (get query-params :date) (get query-params "date"))
+          activity-v (or (get query-params :activity) (get query-params "activity"))
+          type-v    (or (get query-params :activity_type) (get query-params "activity_type"))]
+      (into {}
+            (remove (fn [[_ v]] (or (nil? v) (empty? (str v)))))
+            {:date date-v
+             :activity activity-v
+             :activity_type type-v}))))
+
 (defn list-activities-handler
-  [{componentes :componentes}]
+  "Receives the request map (same as other handlers); componentes and query-params come from request."
+  [{:keys [query-params] componentes :componentes}]
   (let [{:keys [persistency]} componentes
-        results (controllers.activity/list-activities persistency)
+        filters (query-params->filters query-params)
+        results (controllers.activity/list-activities persistency filters)
         response-wires (map adapters.activity/model->wire results)
         response-body {:items response-wires}]
     (response/ok response-body)))

@@ -25,16 +25,16 @@
            :kind kind)))
 
 (defn api-response->activities
-  "Converts activities API response to internal format.
+  "Converts activities list API response to internal format.
    API returns { items: [...] }. Each item has activity, activity-type, unit, amount-planned, amount-executed.
   
   Parameters:
-  - api-response: JavaScript object with API response (must have .items)
+  - api-response: JavaScript object with API response (root key .items)
   
   Returns:
   - Vector of maps with activities in internal format (keywordized and normalized)"
   [api-response]
-  (let [items (or (.-items api-response) (.-activities api-response) #js [])]
+  (let [items (or (.-items api-response) #js [])]
     (mapv normalize-activity-item (js->clj items :keywordize-keys true))))
 
 (defn api-response->upload-summary
