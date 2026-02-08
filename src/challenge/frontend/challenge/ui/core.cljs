@@ -170,16 +170,11 @@
 
 (defn mount-root
   "Mounts root application component and initializes state.
-   Sets default date to today and fetches activities once if date was empty."
+   Fetches activities once on load (without date filter when date is empty)."
   []
   (when-let [app-el (.getElementById js/document "app")]
     (rdom/render [app] app-el)
-    (let [current-filters (models/filters @app-state)
-          date-value (str (or (:date current-filters) ""))]
-      (when (empty? date-value)
-        (let [today (logic/today-date)]
-          (update-filter! :date today)
-          (fetch-activities!))))))
+    (fetch-activities!)))
 
 (defn ^:export init
   "Exported initialization function to be called by HTML."
