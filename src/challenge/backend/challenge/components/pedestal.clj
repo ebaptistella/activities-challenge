@@ -38,7 +38,7 @@
             config-with-context (assoc final-config
                                        ::http/context {:system full-system-map})
             ;; Create an interceptor to inject context and components into request
-            ;; Components are injected under :componentes key for easy destructuring
+            ;; Components are injected under :components key for easy destructuring
             ;; Capture full-system-map in closure to avoid accessing config-with-context
             context-interceptor (let [captured-system full-system-map]
                                   (interceptor/interceptor
@@ -63,11 +63,11 @@
                                                (-> context
                                                    ;; Inject full context for backward compatibility
                                                    (assoc-in [:request ::http/context] {:system system-from-request})
-                                                   ;; Inject components under :componentes key
-                                                   (assoc-in [:request :componentes] {:persistency persistency-comp
-                                                                                      :logger logger-comp
-                                                                                      :config config-comp
-                                                                                      :pedestal pedestal-comp}))))}))
+                                                   ;; Inject components under :components key
+                                                   (assoc-in [:request :components] {:persistency persistency-comp
+                                                                                     :logger logger-comp
+                                                                                     :config config-comp
+                                                                                     :pedestal pedestal-comp}))))}))
             config-with-interceptors (-> config-with-context
                                          http/default-interceptors
                                          http/dev-interceptors

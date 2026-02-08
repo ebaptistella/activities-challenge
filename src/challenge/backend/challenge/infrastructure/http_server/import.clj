@@ -1,5 +1,6 @@
 (ns challenge.infrastructure.http-server.import
-  (:require [challenge.controllers.import :as controllers.import]
+  (:require [challenge.adapters.activity :as adapters.activity]
+            [challenge.controllers.import :as controllers.import]
             [challenge.interface.http.response :as response]
             [clojure.string :as string]
             [schema.core :as s]))
@@ -27,14 +28,14 @@
    Expects :multipart-params with \"file\" key (set by multipart interceptor).
    Returns 400 if no file; otherwise runs import logic and returns
    {:type \"planned\" :valid N :invalid M}."
-  [{:keys [multipart-params] componentes :componentes}]
+  [{:keys [multipart-params persistency] _components :components}]
   (if-let [file-part (get multipart-params "file")]
     (let [csv-content (file-part->csv-string file-part)
           filename (get file-part :filename "")
-          type (filename->type filename)
-          {:keys [persistency]} componentes]
+          type (filename->type filename)]
       (if (or (nil? csv-content) (empty? csv-content))
         (response/bad-request "File content is empty")
-        (let [result (controllers.import/import-csv! csv-content type persistency)]
-          (response/ok result))))
+        (let [result (controllers.import/import-csv! csv-content type persistency)
+              response-wire (adapters.activity/model->wire result)]
+          (response/ok response-wire))))
     (response/bad-request "File required")))

@@ -6,20 +6,18 @@
             [schema.core :as s]))
 
 (s/defn create-activity-handler
-  [{:keys [activity-wire] componentes :componentes}]
-  (let [{:keys [logger]} componentes
-        log (logger/bound logger)]
+  [{:keys [activity-wire] {:keys [persistency logger]} :components :as request}]
+  (let [log (logger/bound logger)]
     (logger/log-call log :debug
-                     "[Handler] create-activity-handler called | activity-wire: %s | componentes keys: %s"
+                     "[Handler] create-activity-handler called | activity-wire: %s | components keys: %s"
                      (pr-str activity-wire)
-                     (keys componentes))
+                     (keys (:components request)))
     (if (nil? activity-wire)
       (do
         (logger/log-call log :warn "[Handler] create-activity-handler: activity-wire is nil")
         (response/bad-request "Request body is required"))
       (try
-        (let [{:keys [persistency]} componentes
-              _ (logger/log-call log :debug
+        (let [_ (logger/log-call log :debug
                                  "[Handler] create-activity-handler: persistency type: %s"
                                  (type persistency))
               activity-model (do
@@ -49,9 +47,8 @@
           (throw e))))))
 
 (s/defn get-activity-handler
-  [{:keys [activity-id] componentes :componentes}]
-  (let [{:keys [persistency]} componentes
-        result (controllers.activity/get-activity activity-id persistency)]
+  [{:keys [activity-id] {:keys [persistency]} :components}]
+  (let [result (controllers.activity/get-activity activity-id persistency)]
     (if result
       (let [response-wire (adapters.activity/model->wire result)]
         (response/ok response-wire))
@@ -73,31 +70,27 @@
              :activity_type type-v}))))
 
 (s/defn list-activities-handler
-  "Receives the request map (same as other handlers); componentes and query-params come from request."
-  [{:keys [query-params] componentes :componentes}]
-  (let [{:keys [persistency]} componentes
-        filters (query-params->filters query-params)
+  "Receives the request map (same as other handlers); components and query-params come from request."
+  [{:keys [query-params] {:keys [persistency]} :components}]
+  (let [filters (query-params->filters query-params)
         results (controllers.activity/list-activities persistency filters)
         response-wires (map adapters.activity/model->wire results)
         response-body {:items response-wires}]
     (response/ok response-body)))
 
 (s/defn update-activity-handler
-  [{:keys [activity-wire activity-id] componentes :componentes}]
-  (let [{:keys [logger]} componentes
-        log (logger/bound logger)]
+  [{:keys [activity-wire activity-id] {:keys [persistency logger]} :components}]
+  (let [log (logger/bound logger)]
     (if (nil? activity-wire)
       (do
         (logger/log-call log :warn "[Handler] update-activity-handler: activity-wire is nil")
         (response/bad-request "Request body is required"))
-      (let [{:keys [persistency]} componentes
-            updates (adapters.activity/update-wire->model activity-wire)
+      (let [updates (adapters.activity/update-wire->model activity-wire)
             result (controllers.activity/update-activity! activity-id updates persistency)
             response-wire (adapters.activity/model->wire result)]
         (response/ok response-wire)))))
 
 (s/defn delete-activity-handler
-  [{:keys [activity-id] componentes :componentes}]
-  (let [{:keys [persistency]} componentes
-        _ (controllers.activity/delete-activity! activity-id persistency)]
+  [{:keys [activity-id] {:keys [persistency]} :components}]
+  (let [_ (controllers.activity/delete-activity! activity-id persistency)]
     (response/no-content)))

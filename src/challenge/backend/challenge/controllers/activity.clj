@@ -1,32 +1,33 @@
 (ns challenge.controllers.activity
-  (:require [challenge.infrastructure.persistency.activity :as persistency.activity]
+  (:require [challenge.components.persistency :refer [IPersistencySchema]]
+            [challenge.infrastructure.persistency.activity :as persistency.activity]
             [challenge.logic.activity :as logic.activity]
             [challenge.models.activity :as models.activity]
             [schema.core :as s]))
 
 (s/defn create-activity! :- models.activity/Activity
   [activity-data :- models.activity/Activity
-   persistency]
+   persistency :- IPersistencySchema]
   (let [current-date (java.time.LocalDate/now)
         validated-activity (logic.activity/validate-activity activity-data current-date)]
     (persistency.activity/save! validated-activity persistency)))
 
 (s/defn get-activity :- (s/maybe models.activity/Activity)
   [activity-id :- s/Int
-   persistency]
+   persistency :- IPersistencySchema]
   (persistency.activity/find-by-id activity-id persistency))
 
 (s/defn list-activities :- [models.activity/Activity]
-  "Lists activities, optionally filtered by date, activity (substring), and activity_type."
-  ([persistency]
+  ([persistency :- IPersistencySchema]
    (persistency.activity/find-all persistency nil))
-  ([persistency filters]
+  ([persistency :- IPersistencySchema
+    filters :- (s/maybe {s/Keyword s/Any})]
    (persistency.activity/find-all persistency filters)))
 
-(s/defn update-activity! :- models.activity/Activity
+(s/defn update-activity! :- (s/maybe models.activity/Activity)
   [activity-id :- s/Int
-   updates :- {s/Keyword s/Any}
-   persistency]
+   updates :- models.activity/ActivityPartial
+   persistency :- IPersistencySchema]
   (let [existing-activity (persistency.activity/find-by-id activity-id persistency)]
     (when (nil? existing-activity)
       (throw (ex-info "Activity not found" {:activity-id activity-id})))
@@ -42,7 +43,7 @@
 
 (s/defn delete-activity! :- s/Bool
   [activity-id :- s/Int
-   persistency]
+   persistency :- IPersistencySchema]
   (let [existing-activity (persistency.activity/find-by-id activity-id persistency)]
     (when (nil? existing-activity)
       (throw (ex-info "Activity not found" {:activity-id activity-id})))

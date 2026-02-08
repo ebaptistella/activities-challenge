@@ -11,6 +11,10 @@
   (get-datasource [this]
     "Returns the datasource for database operations"))
 
+(def IPersistencySchema
+  "Schema Plumatic that validates that the value satisfies the IPersistency protocol."
+  (s/pred #(satisfies? IPersistency %) 'IPersistency))
+
 (defrecord PersistencyComponent [config logger datasource]
   component/Lifecycle
   (start [this]
