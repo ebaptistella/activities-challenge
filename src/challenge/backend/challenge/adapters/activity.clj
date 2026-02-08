@@ -9,8 +9,7 @@
   (:import [java.time LocalDate]))
 
 (s/defn wire->model :- models.activity/Activity
-  [{:keys [date activity activity-type unit amount-planned amount-executed]}
-   :- wire.in.activity/ActivityRequest]
+  [{:keys [date activity activity-type unit amount-planned amount-executed]} :- wire.in.activity/ActivityRequest]
   {:id nil
    :date (when date (LocalDate/parse date))
    :activity activity
@@ -21,8 +20,8 @@
    :created-at nil
    :updated-at nil})
 
-(s/defn update-wire->model
-  [{:keys [date activity activity-type unit amount-planned amount-executed]}]
+(s/defn update-wire->model :- models.activity/ActivityPartial
+  [{:keys [date activity activity-type unit amount-planned amount-executed]} :- wire.in.activity/ActivityUpdateRequest]
   (into {}
         (remove (comp nil? second)
                 {:date (when date (LocalDate/parse date))
@@ -58,15 +57,15 @@
                  :activity/created-at (:created-at activity)
                  :activity/updated-at (:updated-at activity)})))
 
-(s/defn model->db
-  [activity]
+(s/defn model->db :- wire.persistency.activity/ActivityPersistency
+  [activity :- models.activity/Activity]
   (let [persistency-wire (model->persistency activity)
         with-timestamps (date/convert-instants-to-timestamps persistency-wire)
         db-data (keyword/convert-keys-to-db-format with-timestamps)]
     db-data))
 
 (s/defn persistency->model :- models.activity/Activity
-  [db-result]
+  [db-result :- wire.persistency.activity/ActivityPersistencyInput]
   (let [id (or (:activity/id db-result) (:id db-result) (get db-result "id"))
         date (or (:activity/date db-result) (:date db-result) (get db-result "date"))
         activity (or (:activity/activity db-result) (:activity db-result) (get db-result "activity"))

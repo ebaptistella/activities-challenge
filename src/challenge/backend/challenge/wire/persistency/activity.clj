@@ -15,3 +15,21 @@
 
 (s/defschema ActivityPersistency
   (schema/strict-schema activity-persistency-skeleton))
+
+(def activity-db-result-skeleton
+  {:id              {:schema (s/maybe s/Int) :required false :doc "Activity unique identifier"}
+   :date            {:schema (s/maybe s/Any) :required false :doc "Activity date (LocalDate, java.sql.Date, string)"}
+   :activity        {:schema (s/maybe s/Str) :required false :doc "Activity description"}
+   :activity_type   {:schema (s/maybe s/Str) :required false :doc "Type of activity (snake_case from DB)"}
+   :unit            {:schema (s/maybe s/Str) :required false :doc "Unit of measurement"}
+   :amount_planned  {:schema (s/maybe s/Num) :required false :doc "Planned amount"}
+   :amount_executed {:schema (s/maybe s/Num) :required false :doc "Executed amount"}
+   :created_at      {:schema (s/maybe s/Any) :required false :doc "Creation timestamp"}
+   :updated_at      {:schema (s/maybe s/Any) :required false :doc "Last update timestamp"}})
+
+(s/defschema ActivityDbResult
+  (schema/loose-schema activity-db-result-skeleton))
+
+(s/defschema ActivityPersistencyInput
+  (s/conditional #(contains? % :activity/id) ActivityPersistency
+                 :else ActivityDbResult))
