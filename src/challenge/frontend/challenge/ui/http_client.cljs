@@ -119,7 +119,7 @@
   Returns:
   - Promise"
   [query-params on-success on-error]
-  (let [url (str "/api/activities?" query-params)]
+  (let [url (str "/api/v1/activities?" query-params)]
     (fetch-json url {:method "GET"} on-success on-error)))
 
 (defn upload-csv
@@ -135,7 +135,7 @@
   [file on-success on-error]
   (let [form-data (js/FormData.)]
     (.append form-data "file" file)
-    (fetch-json "/api/import"
+    (fetch-json "/api/v1/import"
                 {:method "POST"
                  :body form-data}
                 on-success

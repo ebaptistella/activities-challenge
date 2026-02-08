@@ -64,17 +64,19 @@
   (js/setTimeout #(swap! app-state assoc :upload-status nil) 5000))
 
 (defn fetch-activities!
-  "Fetches activities from API with current filters."
+  "Fetches activities from API with current filters.
+   Skips if already loading to avoid duplicate requests."
   []
-  (let [filters (models/filters @app-state)
-        query-params (logic/build-query-params filters)]
-    (set-activities-loading! true)
-    (http/fetch-activities query-params
-                           (fn [data]
-                             (let [activities-data (adapters/api-response->activities data)]
-                               (set-activities! activities-data)))
-                           (fn [error-msg]
-                             (set-activities-error! error-msg)))))
+  (when-not (models/activities-loading? @app-state)
+    (let [filters (models/filters @app-state)
+          query-params (logic/build-query-params filters)]
+      (set-activities-loading! true)
+      (http/fetch-activities query-params
+                             (fn [data]
+                               (let [activities-data (adapters/api-response->activities data)]
+                                 (set-activities! activities-data)))
+                             (fn [error-msg]
+                               (set-activities-error! error-msg))))))
 
 (defn handle-upload-success
   "Processes file upload success.
@@ -124,14 +126,10 @@
       (upload-csv! file))))
 
 (defn handle-filter-change
-  "Handles filter change.
-  
-  Parameters:
-  - key: Keyword with filter key
-  - value: New filter value"
+  "Handles filter change. Updates state; only triggers fetch when date changes (other filters require Apply)."
   [key value]
-  (let [date-value (if (= key :date) (str value) value)]
-    (update-filter! key date-value)
+  (let [value-str (str (or value ""))]
+    (update-filter! key value-str)
     (when (= key :date)
       (fetch-activities!))))
 
@@ -171,12 +169,14 @@
        [activities/activities-table activities-data loading? error-msg]]]]))
 
 (defn mount-root
-  "Mounts root application component and initializes state."
+  "Mounts root application component and initializes state.
+   Sets default date to today and fetches activities once if date was empty."
   []
   (when-let [app-el (.getElementById js/document "app")]
     (rdom/render [app] app-el)
-    (let [current-filters (models/filters @app-state)]
-      (when (empty? (:date current-filters))
+    (let [current-filters (models/filters @app-state)
+          date-value (str (or (:date current-filters) ""))]
+      (when (empty? date-value)
         (let [today (logic/today-date)]
           (update-filter! :date today)
           (fetch-activities!))))))

@@ -3,7 +3,7 @@
             [challenge.wire.out.health :as wire.out.health]))
 
 (def routes
-  #{["/health"
+  #{["/api/health"
      :get
      http-server.health/health-check
      :route-name :health-check

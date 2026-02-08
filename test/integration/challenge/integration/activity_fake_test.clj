@@ -10,7 +10,7 @@
 
 (defflow activity-fake-test
   (flow "test fake setup - health check"
-        [response (http-helpers/request {:method :get :path "/health"})]
+        [response (http-helpers/request {:method :get :path "/api/health"})]
         (match? {:status 200
                  :body {:status "ok"
                         :service "challenge"}}

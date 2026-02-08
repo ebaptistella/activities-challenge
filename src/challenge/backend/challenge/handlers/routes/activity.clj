@@ -6,7 +6,7 @@
             [challenge.wire.out.error :as wire.out.error]))
 
 (def routes
-  #{["/activities"
+  #{["/api/v1/activities"
      :post
      [interceptors.validation/json-body
       (interceptors.validation/validate-request-body wire.in.activity/ActivityRequest :activity-wire)
@@ -23,7 +23,7 @@
                  500 {:body wire.out.error/ErrorResponse
                       :description "Internal server error"}}]
 
-    ["/activities"
+    ["/api/v1/activities"
      :get
      http-server.activity/list-activities-handler
      :route-name :list-activities
@@ -34,7 +34,7 @@
                  500 {:body wire.out.error/ErrorResponse
                       :description "Internal server error"}}]
 
-    ["/activities/:id"
+    ["/api/v1/activities/:id"
      :get
      [interceptors.validation/validate-path-params-id
       http-server.activity/get-activity-handler]
@@ -50,7 +50,7 @@
                  500 {:body wire.out.error/ErrorResponse
                       :description "Internal server error"}}]
 
-    ["/activities/:id"
+    ["/api/v1/activities/:id"
      :put
      [interceptors.validation/json-body
       (interceptors.validation/validate-request-body wire.in.activity/ActivityUpdateRequest :activity-wire)
@@ -70,7 +70,7 @@
                  500 {:body wire.out.error/ErrorResponse
                       :description "Internal server error"}}]
 
-    ["/activities/:id"
+    ["/api/v1/activities/:id"
      :delete
      [interceptors.validation/validate-path-params-id
       http-server.activity/delete-activity-handler]

@@ -61,7 +61,7 @@
   (let [{:keys [persistency]} componentes
         results (controllers.activity/list-activities persistency)
         response-wires (map adapters.activity/model->wire results)
-        response-body {:activities response-wires}]
+        response-body {:items response-wires}]
     (response/ok response-body)))
 
 (defn update-activity-handler

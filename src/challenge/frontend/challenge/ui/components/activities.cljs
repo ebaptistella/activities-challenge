@@ -44,18 +44,22 @@
 
 (defn activity-row
   "Activity table row component.
-  
-  Parameters:
-  - activity: Map with activity data"
+   Expects activity with :id, :activity, :activity-type (or :activity_type), :unit,
+   :amount-display (or :amount-planned/:amount-executed), :kind (for badge)."
   [activity]
-  ^{:key (str (:activity activity) "-" (:activity_type activity) "-" (:kind activity))}
-  [:tr.hover:bg-gray-50
-   [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 (:activity activity)]
-   [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 (:activity_type activity)]
-   [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 (:unit activity)]
-   [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 (:amount activity)]
-   [:td.px-6.py-4.whitespace-nowrap.text-sm
-    [kind-badge (:kind activity)]]])
+  (let [activity-type (or (:activity-type activity) (:activity_type activity))
+        amount-display (or (:amount-display activity)
+                          (when (or (:amount-planned activity) (:amount-executed activity))
+                            (str (or (:amount-planned activity) "-") " / " (or (:amount-executed activity) "-")))
+                          "-")]
+    ^{:key (str (:id activity) "-" (:activity activity) "-" (or activity-type "") "-" (:kind activity))}
+    [:tr.hover:bg-gray-50
+     [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 (:activity activity)]
+     [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 activity-type]
+     [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 (:unit activity)]
+     [:td.px-6.py-4.whitespace-nowrap.text-sm.text-gray-900 amount-display]
+     [:td.px-6.py-4.whitespace-nowrap.text-sm
+      [kind-badge (or (:kind activity) :planned)]]]))
 
 (defn activities-table
   "Main activities table component.

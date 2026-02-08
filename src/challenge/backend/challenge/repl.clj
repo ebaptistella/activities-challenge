@@ -66,4 +66,5 @@
     (auto-start!)))
 
 (comment
-  (reload!))
+  (reload!)
+  (restart!))
