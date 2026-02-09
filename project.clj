@@ -27,12 +27,17 @@
             [com.github.clojure-lsp/lein-clojure-lsp "2.0.13"]
             [lein-cljfmt "0.8.2"]
             [lein-nsorg "0.3.0"]
-            [lein-cljsbuild "1.1.8"]]
+            [lein-cljsbuild "1.1.8"]
+            [lein-resource "17.06.1"]]
   :clojure-lsp {:settings {:clean {:ns-inner-blocks-indentation :same-line}}}
   :clean-targets ^{:protect false} ["resources/public/js" "target"]
   :source-paths ["src/challenge/backend"]
   :test-paths ["test/unit" "test/integration"]
   :resource-paths ["resources"]
+  :resource {:resource-paths ["resources"]
+             :target-path "target/classes"
+             :skip-stencil [#".*"]}
+  :prep-tasks ["javac" "compile" "resource"]
   :main challenge.main
   :aot [challenge.main]
   :migratus {:store :database
@@ -53,7 +58,7 @@
                                          :asset-path "js/out-prod"
                                          :main challenge.ui.core
                                          :optimizations :advanced
-                                         :source-map "js/app.js.map"
+                                         :source-map "resources/public/js/app.js.map"
                                          :pretty-print false
                                          :closure-defines {goog.DEBUG false}}}}}
   :profiles {:dev {:dependencies [[io.pedestal/pedestal.service-tools "0.5.8"]

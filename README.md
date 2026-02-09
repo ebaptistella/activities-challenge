@@ -276,8 +276,11 @@ lein cljs-once
 # 2. Compile ClojureScript for production (optimized)
 lein cljsbuild once prod
 
-# 3. Create uberjar (includes compiled frontend assets)
+# 3. Create uberjar (includes compiled frontend assets and all resources)
 lein uberjar
+
+# Resources (config/, migrations/, public/, logback.xml) are copied to target/classes
+# before packaging via the lein-resource plugin, so they are always included in the JAR.
 
 # Clean build artifacts (removes target/ and resources/public/js/)
 lein clean

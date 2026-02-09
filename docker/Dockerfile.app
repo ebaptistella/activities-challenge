@@ -20,14 +20,19 @@ RUN --mount=type=cache,target=/root/.m2/repository \
     --mount=type=cache,target=/root/.lein \
     lein test
 
-# Build ClojureScript before uberjar
+# Build: clean, cljsbuild, resource (copy to target/classes). We save public/js from target/classes
+# before the uberjar (the prep-task compile can clear target/classes). After the uberjar, we inject it into the JAR.
 RUN --mount=type=cache,target=/root/.m2/repository \
     --mount=type=cache,target=/root/.lein \
-    lein cljsbuild once app
+    lein do clean, cljsbuild once prod, resource && \
+    mkdir -p /tmp/jar_add/public && \
+    cp -r /app/target/classes/public/js /tmp/jar_add/public/ && \
+    lein uberjar && \
+    cd /tmp/jar_add && jar uf /app/target/challenge-0.1.0-SNAPSHOT-standalone.jar public/js/
 
-RUN --mount=type=cache,target=/root/.m2/repository \
-    --mount=type=cache,target=/root/.lein \
-    lein uberjar
+# Verify app.js is in the JAR
+RUN jar tf /app/target/challenge-0.1.0-SNAPSHOT-standalone.jar | grep -q 'public/js/app\.js' || \
+    (echo "ERROR: public/js/app.js not in JAR" && exit 1)
 
 FROM public.ecr.aws/docker/library/eclipse-temurin:21-jdk
 
